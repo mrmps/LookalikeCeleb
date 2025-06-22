@@ -46,10 +46,10 @@ const ShareCard: React.FC<ShareCardProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-6">
-      <div className="bg-white rounded-3xl p-6 w-full max-w-sm">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-6">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">Share Your Match</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Share Your Match</h2>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
@@ -58,10 +58,10 @@ const ShareCard: React.FC<ShareCardProps> = ({
         {/* Shareable Card */}
         <Card 
           ref={cardRef}
-          className="bg-gradient-to-br from-purple-500 to-pink-500 p-6 text-white mb-6 rounded-2xl"
+          className="bg-gray-900 p-6 text-white mb-6 rounded-xl border-0"
         >
           <div className="text-center mb-6">
-            <h3 className="text-lg font-bold mb-1">CelebLook Match</h3>
+            <h3 className="text-lg font-semibold mb-1">CelebLook Match</h3>
             <p className="text-sm opacity-90">AI-Powered Celebrity Recognition</p>
           </div>
 
@@ -92,7 +92,7 @@ const ShareCard: React.FC<ShareCardProps> = ({
 
           <div className="text-center">
             <p className="text-sm opacity-90">Find your celebrity twin at</p>
-            <p className="font-bold">CelebLook.app</p>
+            <p className="font-semibold">CelebLook.app</p>
           </div>
         </Card>
 
@@ -100,7 +100,7 @@ const ShareCard: React.FC<ShareCardProps> = ({
         <div className="space-y-3">
           <Button 
             onClick={handleShare}
-            className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl"
+            className="w-full h-12 bg-gray-900 text-white rounded-xl hover:bg-gray-800"
           >
             <Share2 className="w-4 h-4 mr-2" />
             Share Result
@@ -109,7 +109,7 @@ const ShareCard: React.FC<ShareCardProps> = ({
           <Button 
             onClick={handleDownload}
             variant="outline"
-            className="w-full h-12 rounded-2xl"
+            className="w-full h-12 rounded-xl border border-gray-200"
           >
             <Download className="w-4 h-4 mr-2" />
             Download Image
