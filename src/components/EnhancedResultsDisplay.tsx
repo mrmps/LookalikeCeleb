@@ -71,7 +71,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
       </div>
 
       <div className="p-6 space-y-6 max-w-md mx-auto">
-        {/* Top Match Highlight - Much Larger Images */}
+        {/* Top Match Highlight - Extra Large Images */}
         <Card className="bg-white p-8 shadow-sm border border-gray-100 rounded-xl">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 mb-6">
@@ -84,29 +84,29 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
             </Badge>
           </div>
 
-          {/* Much Larger Comparison Images */}
-          <div className="flex items-center gap-6 mb-8">
+          {/* Extra Large Comparison Images */}
+          <div className="flex items-center gap-4 mb-8">
             <div className="flex-1 text-center">
               <img 
                 src={uploadedImage} 
                 alt="Your photo" 
-                className="w-24 h-24 rounded-xl object-cover border border-gray-200 mx-auto mb-3"
+                className="w-32 h-32 rounded-2xl object-cover border-2 border-gray-200 mx-auto mb-4 shadow-sm"
               />
               <p className="text-sm text-gray-600 font-medium">You</p>
             </div>
             
-            <div className="text-center">
-              <div className="text-4xl font-bold text-gray-900 mb-1">
+            <div className="text-center px-2">
+              <div className="text-5xl font-bold text-gray-900 mb-2">
                 {animatePercentages ? topMatch.percentage : 0}%
               </div>
-              <p className="text-sm text-gray-500">Match</p>
+              <p className="text-sm text-gray-500 font-medium">Match</p>
             </div>
             
             <div className="flex-1 text-center">
               <img 
                 src={topMatch.image} 
                 alt={topMatch.name}
-                className="w-24 h-24 rounded-xl object-cover border border-gray-200 mx-auto mb-3"
+                className="w-32 h-32 rounded-2xl object-cover border-2 border-gray-200 mx-auto mb-4 shadow-sm"
               />
               <p className="text-sm text-gray-600 font-medium">{topMatch.name}</p>
             </div>
@@ -135,7 +135,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                   <img 
                     src={celebrity.image} 
                     alt={celebrity.name}
-                    className="w-16 h-16 rounded-xl object-cover border border-gray-200"
+                    className="w-20 h-20 rounded-xl object-cover border-2 border-gray-200 shadow-sm"
                   />
                   {index === 0 && (
                     <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
