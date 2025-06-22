@@ -32,48 +32,91 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
   };
 
   const handleCameraClick = async () => {
+    console.log('Camera button clicked');
     try {
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera not supported on this device');
+      }
+
+      console.log('Requesting camera access...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' }, // Front camera
+        video: { 
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
         audio: false
       });
       
+      console.log('Camera access granted');
+      
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.onloadedmetadata = () => {
+          console.log('Video metadata loaded');
+          videoRef.current?.play();
+        };
         setStream(mediaStream);
         setIsCameraOpen(true);
       }
     } catch (error) {
-      console.error('Error accessing camera:', error);
-      alert('Unable to access camera. Please check permissions or use gallery upload.');
+      console.error('Camera error:', error);
+      let errorMessage = 'Unable to access camera. ';
+      
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          errorMessage += 'Please allow camera permissions and try again.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage += 'No camera found on this device.';
+        } else if (error.name === 'NotSupportedError') {
+          errorMessage += 'Camera not supported on this browser.';
+        } else {
+          errorMessage += error.message;
+        }
+      }
+      
+      alert(errorMessage + ' Please use gallery upload instead.');
     }
   };
 
   const takePicture = () => {
+    console.log('Taking picture...');
     if (videoRef.current && canvasRef.current) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       const context = canvas.getContext('2d');
       
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      if (context) {
-        // Flip the image horizontally for a mirror effect (typical for front camera)
+      if (context && video.videoWidth > 0 && video.videoHeight > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Flip the image horizontally for a mirror effect
         context.scale(-1, 1);
         context.drawImage(video, -canvas.width, 0);
         
         const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        console.log('Picture taken successfully');
         onImageUpload(imageDataUrl);
         closeCamera();
+      } else {
+        console.error('Video not ready or context not available');
+        alert('Camera not ready. Please wait a moment and try again.');
       }
     }
   };
 
   const closeCamera = () => {
+    console.log('Closing camera...');
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(track => {
+        track.stop();
+        console.log('Camera track stopped');
+      });
       setStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
     setIsCameraOpen(false);
   };
@@ -98,7 +141,12 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             className="w-full h-full object-cover"
+            onError={(e) => {
+              console.error('Video error:', e);
+              alert('Video playback error. Please try again.');
+            }}
           />
           
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">

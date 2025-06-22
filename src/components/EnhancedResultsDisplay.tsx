@@ -71,7 +71,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
       </div>
 
       <div className="p-6 space-y-6 max-w-md mx-auto">
-        {/* Top Match Highlight - Intertwining Circles */}
+        {/* Top Match Highlight - Fixed Interwoven Circles */}
         <Card className="bg-white p-8 shadow-sm border border-gray-100 rounded-xl">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 mb-6">
@@ -84,49 +84,43 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
             </Badge>
           </div>
 
-          {/* Intertwining Circles with Maximum Size Images */}
-          <div className="relative flex items-center justify-center mb-8 h-80">
-            {/* Background circles for visual effect */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-60 h-60 border-4 border-gray-200 rounded-full absolute -translate-x-8"></div>
-              <div className="w-60 h-60 border-4 border-gray-300 rounded-full absolute translate-x-8"></div>
-            </div>
-            
-            {/* Your photo circle - left side */}
-            <div className="relative z-10 -mr-16">
-              <div className="w-56 h-56 rounded-full overflow-hidden border-4 border-white shadow-lg">
+          {/* Properly Interwoven Circles Design */}
+          <div className="relative flex items-center justify-center mb-8 h-72">
+            {/* Left circle (Your photo) */}
+            <div className="relative z-10">
+              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
                 <img 
                   src={uploadedImage} 
                   alt="Your photo" 
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow-md border border-gray-200">
-                <p className="text-sm font-medium text-gray-700">You</p>
+              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-3 py-1 shadow-md border border-gray-200">
+                <p className="text-xs font-medium text-gray-700">You</p>
               </div>
             </div>
             
-            {/* Celebrity photo circle - right side */}
+            {/* Right circle (Celebrity photo) - overlapping */}
             <div className="relative z-10 -ml-16">
-              <div className="w-56 h-56 rounded-full overflow-hidden border-4 border-white shadow-lg">
+              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
                 <img 
                   src={topMatch.image} 
                   alt={topMatch.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow-md border border-gray-200">
-                <p className="text-sm font-medium text-gray-700">{topMatch.name}</p>
+              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-3 py-1 shadow-md border border-gray-200">
+                <p className="text-xs font-medium text-gray-700">{topMatch.name}</p>
               </div>
             </div>
 
-            {/* Match percentage in center */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 bg-white rounded-full w-20 h-20 flex items-center justify-center shadow-lg border-4 border-gray-100">
+            {/* Match percentage in center overlap */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 border-gray-100">
               <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900">
+                <div className="text-lg font-bold text-gray-900">
                   {animatePercentages ? topMatch.percentage : 0}%
                 </div>
-                <p className="text-xs text-gray-500 font-medium">Match</p>
+                <p className="text-xs text-gray-500 font-medium -mt-1">Match</p>
               </div>
             </div>
           </div>
