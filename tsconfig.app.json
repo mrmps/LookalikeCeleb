@@ -23,8 +23,10 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
+      "@/*": ["./src/*"],
+      "@shared/app": ["./server/app.ts"]
+    },
+    "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": ["src"]
 }
