@@ -118,24 +118,23 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Main Upload Card */}
-      <Card className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-        <div className="space-y-4">
+      <Card className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="space-y-3">
           <Button 
             onClick={handleUploadClick}
-            className="w-full h-14 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl text-lg"
+            className="w-full h-14 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-2xl text-lg shadow-sm active-scale"
           >
-            <Upload className="w-6 h-6 mr-3" />
+            <Upload className="w-5 h-5 mr-3" />
             Choose from Gallery
           </Button>
 
           <Button 
             onClick={handleCameraClick}
-            variant="outline"
-            className="w-full h-14 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 text-lg"
+            className="w-full h-14 bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium rounded-2xl text-lg shadow-sm active-scale"
           >
-            <Camera className="w-6 h-6 mr-3" />
+            <Camera className="w-5 h-5 mr-3" />
             Use Camera
           </Button>
         </div>
@@ -150,7 +149,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
       </Card>
 
       {/* Privacy Note */}
-      <div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
+      <div className="bg-blue-50 rounded-2xl p-4 border-0">
         <p className="text-sm text-blue-800 text-center">
           <span className="font-medium">Privacy Protected:</span> Photos are processed securely and never stored
         </p>
