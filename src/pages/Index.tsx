@@ -42,8 +42,13 @@ const Index = () => {
       <div className="min-h-screen bg-white">
         <Header />
         <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
-          <div className="w-24 h-24 bg-gray-900 rounded-2xl flex items-center justify-center mb-8 shadow-sm">
-            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="w-24 h-24 rounded-2xl overflow-hidden mb-8 shadow-sm">
+            <img 
+              src="/lovable-uploads/d24d594a-33ec-4302-b4c9-8235382d96ff.png" 
+              alt="CelebLook Logo" 
+              className="w-full h-full object-cover"
+            />
+            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
           </div>
           <h2 className="text-2xl font-semibold text-gray-900 mb-3">Analyzing Your Photo</h2>
           <p className="text-gray-600 text-center leading-relaxed mb-8 max-w-sm">
@@ -87,10 +92,12 @@ const Index = () => {
       <div className="max-w-md mx-auto">
         {/* Hero Section */}
         <div className="text-center pt-16 pb-12 px-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-900 rounded-2xl mb-8 shadow-sm">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-2xl">✨</span>
-            </div>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-8 shadow-sm overflow-hidden">
+            <img 
+              src="/lovable-uploads/d24d594a-33ec-4302-b4c9-8235382d96ff.png" 
+              alt="CelebLook Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           
           <h1 className="text-3xl font-semibold text-gray-900 mb-4 leading-tight">
