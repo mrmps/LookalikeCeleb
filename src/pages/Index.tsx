@@ -1,50 +1,19 @@
+
 import React, { useState } from 'react';
-import OnboardingFlow from '@/components/OnboardingFlow';
-import CameraPermission from '@/components/CameraPermission';
 import PhotoUpload from '@/components/PhotoUpload';
-import FaceCapture from '@/components/FaceCapture';
 import EnhancedResultsDisplay from '@/components/EnhancedResultsDisplay';
 import ShareCard from '@/components/ShareCard';
 import Header from '@/components/Header';
 import FAQ from '@/components/FAQ';
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
 
-type AppState = 'landing' | 'onboarding' | 'camera-permission' | 'upload' | 'capture' | 'processing' | 'results' | 'share';
+type AppState = 'landing' | 'processing' | 'results';
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>('landing');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
 
-  const handleGetStarted = () => {
-    setAppState('onboarding');
-  };
-
-  const handleOnboardingComplete = () => {
-    setHasSeenOnboarding(true);
-    setAppState('camera-permission');
-  };
-
-  const handleCameraAllow = () => {
-    setAppState('capture');
-  };
-
-  const handleCameraDeny = () => {
-    setAppState('upload');
-  };
-
   const handleImageUpload = (imageUrl: string) => {
-    setUploadedImage(imageUrl);
-    setAppState('processing');
-    // Simulate processing delay
-    setTimeout(() => {
-      setAppState('results');
-    }, 2000);
-  };
-
-  const handleFaceCapture = (imageUrl: string) => {
     setUploadedImage(imageUrl);
     setAppState('processing');
     // Simulate processing delay
@@ -66,71 +35,6 @@ const Index = () => {
   const handleShareClose = () => {
     setShowShareCard(false);
   };
-
-  // Landing Page
-  if (appState === 'landing') {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <div className="max-w-md mx-auto">
-          {/* Hero Section */}
-          <div className="text-center pt-16 pb-12 px-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-900 rounded-2xl mb-8 shadow-sm">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-2xl">✨</span>
-              </div>
-            </div>
-            
-            <h1 className="text-3xl font-semibold text-gray-900 mb-4 leading-tight">
-              Which Celebrity
-              <br />
-              Do You Look Like?
-            </h1>
-            
-            <p className="text-lg text-gray-600 leading-relaxed mb-12">
-              Discover your celebrity twin with AI-powered facial recognition
-            </p>
-
-            <Button 
-              onClick={handleGetStarted}
-              className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl px-6"
-            >
-              Get Started
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-
-        {/* FAQ Section */}
-        <FAQ />
-      </div>
-    );
-  }
-
-  // Onboarding Flow
-  if (appState === 'onboarding') {
-    return <OnboardingFlow onComplete={handleOnboardingComplete} />;
-  }
-
-  // Camera Permission
-  if (appState === 'camera-permission') {
-    return (
-      <CameraPermission 
-        onAllow={handleCameraAllow}
-        onDeny={handleCameraDeny}
-      />
-    );
-  }
-
-  // Face Capture
-  if (appState === 'capture') {
-    return (
-      <FaceCapture 
-        onCapture={handleFaceCapture}
-        onBack={() => setAppState('upload')}
-      />
-    );
-  }
 
   // Processing State
   if (appState === 'processing') {
@@ -176,35 +80,36 @@ const Index = () => {
     );
   }
 
-  // Default Upload State
+  // Main Landing Page
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <div className="px-6 pb-8 max-w-md mx-auto">
-        <div>
-          {/* Hero Section */}
-          <div className="text-center pt-16 pb-12">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-900 rounded-2xl mb-8 shadow-sm">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-2xl">✨</span>
-              </div>
+      <div className="max-w-md mx-auto">
+        {/* Hero Section */}
+        <div className="text-center pt-16 pb-12 px-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-900 rounded-2xl mb-8 shadow-sm">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-2xl">✨</span>
             </div>
-            
-            <h1 className="text-3xl font-semibold text-gray-900 mb-4 leading-tight">
-              Which Celebrity
-              <br />
-              Do You Look Like?
-            </h1>
-            
-            <p className="text-lg text-gray-600 leading-relaxed mb-12">
-              Discover your celebrity twin with AI-powered facial recognition
-            </p>
           </div>
+          
+          <h1 className="text-3xl font-semibold text-gray-900 mb-4 leading-tight">
+            Which Celebrity
+            <br />
+            Do You Look Like?
+          </h1>
+          
+          <p className="text-lg text-gray-600 leading-relaxed mb-12">
+            Discover your celebrity twin with AI-powered facial recognition
+          </p>
 
-          {/* Upload Section */}
+          {/* Photo Upload Section */}
           <PhotoUpload onImageUpload={handleImageUpload} />
         </div>
       </div>
+
+      {/* FAQ Section */}
+      <FAQ />
     </div>
   );
 };
