@@ -29,7 +29,7 @@ const FAQ = () => {
     },
     {
       question: "Can I use any photo format?",
-      answer: "Yes, CelebLook supports all common image formats including JPG, PNG, and HEIC. You can upload photos from your gallery or take a new photo directly through the app."
+      answer: "Yes, CelebLook supports all common image formats including JPG and PNG. More niche types like WEBP are NOT supported.You can upload photos from your gallery or take a new photo directly through the app."
     },
     {
       question: "How long does the analysis take?",

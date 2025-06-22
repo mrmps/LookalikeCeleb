@@ -1,5 +1,5 @@
-import React, { useRef, useState, useCallback } from 'react';
-import { Camera, Upload, X, AlertCircle } from 'lucide-react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
+import { Camera, Upload, X, AlertCircle, Clipboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -15,6 +15,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [pasteHint, setPasteHint] = useState(false);
+  const [isMac, setIsMac] = useState(false);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -27,6 +29,54 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
       reader.readAsDataURL(file);
     }
   };
+
+  const handlePasteImage = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      onImageUpload(result);
+    };
+    reader.readAsDataURL(file);
+  }, [onImageUpload]);
+
+  const handlePaste = useCallback((event: ClipboardEvent) => {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        event.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          handlePasteImage(file);
+          setPasteHint(false);
+        }
+        break;
+      }
+    }
+  }, [handlePasteImage]);
+
+  // Add global paste event listener and detect platform
+  useEffect(() => {
+    // Detect Mac platform
+    setIsMac(navigator.platform.toUpperCase().indexOf('MAC') >= 0);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+        setPasteHint(true);
+        setTimeout(() => setPasteHint(false), 2000);
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handlePaste]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -287,6 +337,19 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
         </Card>
       )}
 
+      {/* Paste Hint */}
+      {pasteHint && (
+        <Card className="bg-green-50 border-green-200 rounded-2xl p-4 animate-in fade-in-0 duration-200">
+          <div className="flex items-center gap-3">
+            <Clipboard className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <div>
+              <p className="text-sm text-green-800 font-medium">Ready to paste!</p>
+              <p className="text-sm text-green-700">Paste an image from your clipboard</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Main Upload Card */}
       <div className="space-y-3 md:bg-white md:rounded-2xl md:p-6 md:shadow-sm">
         <Button 
@@ -315,6 +378,26 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
           )}
         </Button>
 
+        {/* Paste Option */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-gray-200"/>
+          </div>
+          <div className="relative flex justify-center text-xs text-gray-500">
+            <span className="bg-white px-2">or</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center p-4 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+          <div className="text-center">
+            <Clipboard className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-600 font-medium">
+              Press {isMac ? 'Cmd+V' : 'Ctrl+V'} to paste
+            </p>
+            <p className="text-xs text-gray-500">Copy an image and paste it here</p>
+          </div>
+        </div>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -327,7 +410,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
       {/* Privacy Note */}
       <div className="bg-blue-50 rounded-2xl p-4 border-0">
         <p className="text-sm text-blue-800 text-center">
-          <span className="font-medium">Privacy Protected:</span> Photos are processed securely and never stored
+          <span className="font-medium">Privacy Protected:</span> Photos are processed securely and never stored, whether uploaded, captured, or pasted
         </p>
       </div>
     </div>

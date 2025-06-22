@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Share2, RotateCcw, Trophy, Crown, Users, TrendingUp } from 'lucide-react';
+import { Star, Share2, RotateCcw, Trophy, Crown, Users, TrendingUp, Info, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
   matches: Match[];
+  analysis?: string;
   onReset: () => void;
   onShare: (matchData: { name: string; image: string; percentage: number }) => void;
 }
@@ -17,21 +18,29 @@ type Match = {
   description: string;
   confidence: string;
   category: string;
+  celebrity_info: string;
+  feature_comparison: string;
 };
 
 const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({ 
   uploadedImage,
   matches,
+  analysis,
   onReset, 
   onShare 
 }) => {
   const [animatePercentages, setAnimatePercentages] = useState(false);
+  const [expandedMatch, setExpandedMatch] = useState<number | null>(null);
   const topMatch = matches[0];
 
   useEffect(() => {
     // Start animation immediately since data is already available
     setTimeout(() => setAnimatePercentages(true), 100);
   }, []);
+
+  const toggleMatchDetails = (index: number) => {
+    setExpandedMatch(expandedMatch === index ? null : index);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,6 +62,21 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
       </div>
 
       <div className="px-4 py-6 space-y-6 max-w-md mx-auto">
+        {/* Analysis Overview */}
+        {analysis && (
+          <Card className="bg-blue-50 border border-blue-200 rounded-xl">
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Eye className="w-4 h-4 text-blue-600" />
+                <h3 className="font-semibold text-blue-900">Photo Analysis</h3>
+              </div>
+              <p className="text-sm text-blue-800 leading-relaxed">
+                {analysis}
+              </p>
+            </div>
+          </Card>
+        )}
+
         {/* Best Match Badge */}
         <div className="text-center">
           <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
@@ -118,6 +142,36 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
             </span>
           </div>
         </div>
+
+        {/* Feature Analysis for Top Match */}
+        {topMatch.feature_comparison && (
+          <Card className="bg-white border border-gray-200 rounded-xl">
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Eye className="w-4 h-4 text-blue-600" />
+                <h3 className="font-semibold text-gray-900">Why You Match</h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {topMatch.feature_comparison}
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* Celebrity Info for Top Match */}
+        {topMatch.celebrity_info && (
+          <Card className="bg-white border border-gray-200 rounded-xl">
+            <div className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Info className="w-4 h-4 text-purple-600" />
+                <h3 className="font-semibold text-gray-900">About {topMatch.name}</h3>
+              </div>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {topMatch.celebrity_info}
+              </p>
+            </div>
+          </Card>
+        )}
         
         {/* Native Action Button */}
         <div className="pt-2">
@@ -173,7 +227,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                       <p className="text-sm text-gray-500 mb-2">{celebrity.description}</p>
                       
                       {/* Progress Bar */}
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
                         <div 
                           className={`h-1.5 rounded-full transition-all duration-1000 ease-out ${
                             index === 0 ? 'bg-gray-900' : 'bg-gray-400'
@@ -183,8 +237,59 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                           }}
                         />
                       </div>
+
+                      {/* Expand Details Button */}
+                      {(celebrity.feature_comparison || celebrity.celebrity_info) && (
+                        <Button
+                          onClick={() => toggleMatchDetails(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-1 text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          {expandedMatch === index ? (
+                            <>
+                              <ChevronUp className="w-3 h-3 mr-1" />
+                              Hide details
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-3 h-3 mr-1" />
+                              Show details
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
+
+                  {/* Expanded Details */}
+                  {expandedMatch === index && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                      {celebrity.feature_comparison && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Eye className="w-3 h-3 text-blue-600" />
+                            <h5 className="text-xs font-semibold text-gray-900">Feature Analysis</h5>
+                          </div>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            {celebrity.feature_comparison}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {celebrity.celebrity_info && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <Info className="w-3 h-3 text-purple-600" />
+                            <h5 className="text-xs font-semibold text-gray-900">About {celebrity.name}</h5>
+                          </div>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            {celebrity.celebrity_info}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}
