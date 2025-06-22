@@ -125,7 +125,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
     return (
       <div className="fixed inset-0 bg-black z-50 flex flex-col">
         <div className="flex justify-between items-center p-4 bg-black text-white">
-          <h3 className="text-lg font-medium">Take a Photo</h3>
+          <h3 className="text-lg font-medium">Position Your Face</h3>
           <Button 
             onClick={closeCamera}
             variant="ghost"
@@ -148,6 +148,32 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
               alert('Video playback error. Please try again.');
             }}
           />
+          
+          {/* Face positioning overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative">
+              {/* Face outline */}
+              <div className="w-64 h-80 border-2 border-white/80 rounded-full relative">
+                {/* Corner guides */}
+                <div className="absolute -top-1 -left-1 w-6 h-6 border-l-2 border-t-2 border-white rounded-tl-lg"></div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 border-r-2 border-t-2 border-white rounded-tr-lg"></div>
+                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-l-2 border-b-2 border-white rounded-bl-lg"></div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-r-2 border-b-2 border-white rounded-br-lg"></div>
+                
+                {/* Center crosshair for eye alignment */}
+                <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="w-8 h-0.5 bg-white/60"></div>
+                  <div className="w-0.5 h-8 bg-white/60 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                </div>
+              </div>
+              
+              {/* Instruction text */}
+              <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-center">
+                <p className="text-white text-sm font-medium mb-1">Center your face in the oval</p>
+                <p className="text-white/70 text-xs">Align your eyes with the crosshair</p>
+              </div>
+            </div>
+          </div>
           
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
             <Button
