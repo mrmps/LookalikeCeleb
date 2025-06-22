@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Star, RotateCcw, Share2, Trophy } from 'lucide-react';
+import { Star, RotateCcw, Share2, Trophy, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -15,19 +15,22 @@ const celebrityMatches = [
     name: "Emma Stone",
     percentage: 94,
     image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&q=80",
-    description: "Academy Award-winning actress"
+    description: "Academy Award Winner",
+    confidence: "Very High"
   },
   {
     name: "Ryan Gosling",
     percentage: 87,
     image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80",
-    description: "Canadian actor and musician"
+    description: "Canadian Actor",
+    confidence: "High"
   },
   {
     name: "Zendaya",
     percentage: 82,
     image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&q=80",
-    description: "Actress and singer"
+    description: "Actress & Singer",
+    confidence: "High"
   }
 ];
 
@@ -35,57 +38,67 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ uploadedImage, onReset 
   return (
     <div className="animate-fade-in space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full mb-4 animate-scale-in">
-          <Trophy className="w-8 h-8 text-white" />
+      <div className="text-center pt-4">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-400 rounded-2xl mb-4 animate-scale-in shadow-lg">
+          <Trophy className="w-8 h-8 text-yellow-900" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Your Celebrity Matches!</h2>
-        <p className="text-gray-600">Here are your top lookalikes</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Matches</h2>
+        <p className="text-gray-600">Here are your top celebrity lookalikes</p>
       </div>
 
       {/* Your Photo */}
-      <Card className="p-4 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-        <div className="text-center">
+      <Card className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-4">
           <img 
             src={uploadedImage} 
             alt="Your photo" 
-            className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border-4 border-white shadow-lg"
+            className="w-16 h-16 rounded-2xl object-cover border-2 border-gray-100"
           />
-          <p className="text-sm font-medium text-gray-700">Your Photo</p>
+          <div>
+            <p className="font-semibold text-gray-900">Your Photo</p>
+            <p className="text-sm text-gray-500">Ready for analysis</p>
+          </div>
         </div>
       </Card>
 
       {/* Results */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {celebrityMatches.map((celebrity, index) => (
-          <Card key={celebrity.name} className="p-4 bg-white/80 backdrop-blur-sm border-0 shadow-lg hover-scale">
-            <div className="flex items-center space-x-4">
+          <Card key={celebrity.name} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 active:scale-[0.98] transition-transform">
+            <div className="flex items-center gap-4">
               <div className="relative">
                 <img 
                   src={celebrity.image} 
                   alt={celebrity.name}
-                  className="w-16 h-16 rounded-full object-cover border-3 border-white shadow-md"
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-gray-100"
                 />
                 {index === 0 && (
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                    <Star className="w-3 h-3 text-white fill-current" />
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm">
+                    <Star className="w-3 h-3 text-yellow-900 fill-current" />
                   </div>
                 )}
               </div>
               
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-gray-800">{celebrity.name}</h3>
-                  <span className="text-lg font-bold text-purple-600">{celebrity.percentage}%</span>
+                  <h3 className="font-semibold text-gray-900 truncate">{celebrity.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-gray-900">{celebrity.percentage}%</span>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{celebrity.description}</p>
+                <p className="text-sm text-gray-500 mb-3">{celebrity.description}</p>
                 
                 {/* Progress bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-100 rounded-full h-2">
                   <div 
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full transition-all duration-1000 ease-out"
+                    className="bg-black h-2 rounded-full transition-all duration-1000 ease-out"
                     style={{width: `${celebrity.percentage}%`}}
                   ></div>
+                </div>
+                
+                <div className="flex items-center justify-between mt-3">
+                  <span className="text-xs text-gray-500">Confidence: {celebrity.confidence}</span>
+                  <ArrowRight className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
             </div>
@@ -94,26 +107,27 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ uploadedImage, onReset 
       </div>
 
       {/* Action Buttons */}
-      <div className="space-y-3 pt-4">
+      <div className="space-y-4 pt-6">
         <Button 
-          onClick={onReset}
-          className="w-full h-14 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover-scale"
+          className="w-full h-14 bg-black hover:bg-gray-800 text-white font-semibold rounded-2xl shadow-lg transition-all duration-200 active:scale-[0.98]"
         >
-          <RotateCcw className="w-5 h-5 mr-2" />
-          Try Another Photo
+          <Share2 className="w-5 h-5 mr-3" />
+          Share Results
+          <ArrowRight className="w-4 h-4 ml-auto" />
         </Button>
         
         <Button 
+          onClick={onReset}
           variant="outline"
-          className="w-full h-14 border-2 border-gray-200 hover:border-purple-300 text-gray-700 font-semibold rounded-xl hover:bg-purple-50 transition-all duration-200 hover-scale"
+          className="w-full h-12 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all duration-200 active:scale-[0.98]"
         >
-          <Share2 className="w-5 h-5 mr-2" />
-          Share Results
+          <RotateCcw className="w-4 h-4 mr-2" />
+          Try Another Photo
         </Button>
       </div>
 
       <div className="text-center pt-4">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400">
           Results are for entertainment purposes only
         </p>
       </div>
