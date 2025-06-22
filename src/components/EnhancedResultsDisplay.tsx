@@ -2,52 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { Star, Share2, RotateCcw, Trophy, Crown, Users, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
+  matches: Match[];
   onReset: () => void;
-  onShare: () => void;
+  onShare: (matchData: { name: string; image: string; percentage: number }) => void;
 }
 
-const celebrityMatches = [
-  {
-    name: "Ryan Gosling",
-    percentage: 89,
-    image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80",
-    description: "Canadian Actor",
-    confidence: "Very High",
-    category: "Hollywood Star"
-  },
-  {
-    name: "Chris Evans",
-    percentage: 84,
-    image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=400&q=80",
-    description: "Marvel Superhero",
-    confidence: "High",
-    category: "Action Star"
-  },
-  {
-    name: "Michael B. Jordan",
-    percentage: 78,
-    image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&q=80",
-    description: "Award-winning Actor", 
-    confidence: "High",
-    category: "Rising Star"
-  }
-];
+type Match = {
+  name: string;
+  percentage: number;
+  image: string;
+  description: string;
+  confidence: string;
+  category: string;
+};
 
 const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({ 
-  uploadedImage, 
+  uploadedImage,
+  matches,
   onReset, 
   onShare 
 }) => {
   const [animatePercentages, setAnimatePercentages] = useState(false);
-  const topMatch = celebrityMatches[0];
+  const topMatch = matches[0];
 
   useEffect(() => {
-    const timer = setTimeout(() => setAnimatePercentages(true), 300);
-    return () => clearTimeout(timer);
+    // Start animation immediately since data is already available
+    setTimeout(() => setAnimatePercentages(true), 100);
   }, []);
 
   return (
@@ -139,7 +122,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
         {/* Native Action Button */}
         <div className="pt-2">
           <Button 
-            onClick={onShare}
+            onClick={() => onShare({ name: topMatch.name, image: topMatch.image, percentage: topMatch.percentage })}
             className="w-full bg-gray-900 hover:bg-gray-800 text-white h-12 rounded-2xl font-medium shadow-sm active:scale-[0.98] transition-all"
           >
             <Share2 className="w-4 h-4 mr-2" />
@@ -155,7 +138,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
           </div>
           
           <div className="space-y-3">
-            {celebrityMatches.map((celebrity, index) => (
+            {matches.map((celebrity, index) => (
               <Card 
                 key={celebrity.name} 
                 className={`bg-white border border-gray-200 rounded-xl ${

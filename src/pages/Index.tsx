@@ -4,30 +4,65 @@ import EnhancedResultsDisplay from '@/components/EnhancedResultsDisplay';
 import ShareCard from '@/components/ShareCard';
 import Header from '@/components/Header';
 import FAQ from '@/components/FAQ';
+import { hc } from 'hono/client';
+import type { AppType } from '../../server/hono';
 
 type AppState = 'landing' | 'processing' | 'results';
+
+type Match = {
+  name: string;
+  percentage: number;
+  image: string;
+  description: string;
+  confidence: string;
+  category: string;
+};
+
+const client = hc<AppType>('http://localhost:3001/');
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>('landing');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
+  const [matchData, setMatchData] = useState<{ name: string; image: string; percentage: number } | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
 
-  const handleImageUpload = (imageUrl: string) => {
+  const fetchMatches = async (): Promise<Match[]> => {
+    const res = await client.api.matches.$get();
+    
+    if (!res.ok) {
+      throw new Error('Failed to fetch matches');
+    }
+    
+    const data = await res.json();
+    return data.matches;
+  };
+
+  const handleImageUpload = async (imageUrl: string) => {
     setUploadedImage(imageUrl);
     setAppState('processing');
-    // Simulate processing delay
-    setTimeout(() => {
+    
+    try {
+      // Fetch data during processing state
+      const matchesData = await fetchMatches();
+      setMatches(matchesData);
       setAppState('results');
-    }, 2000);
+    } catch (error) {
+      console.error('Failed to fetch matches:', error);
+      // Could show error state here
+    }
   };
 
   const resetApp = () => {
     setUploadedImage(null);
     setShowShareCard(false);
+    setMatchData(null);
+    setMatches([]);
     setAppState('landing');
   };
 
-  const handleShare = () => {
+  const handleShare = (data: { name: string; image: string; percentage: number }) => {
+    setMatchData(data);
     setShowShareCard(true);
   };
 
@@ -76,20 +111,21 @@ const Index = () => {
   }
 
   // Results State
-  if (appState === 'results' && uploadedImage) {
+  if (appState === 'results' && uploadedImage && matches.length > 0) {
     return (
       <>
         <EnhancedResultsDisplay 
           uploadedImage={uploadedImage} 
+          matches={matches}
           onReset={resetApp}
           onShare={handleShare}
         />
         {showShareCard && (
           <ShareCard 
             userImage={uploadedImage}
-            celebrityName="Ryan Gosling"
-            celebrityImage="https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80"
-            percentage={89}
+            celebrityName={matchData?.name || "Ryan Gosling"}
+            celebrityImage={matchData?.image || "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80"}
+            percentage={matchData?.percentage || 89}
             onClose={handleShareClose}
           />
         )}
