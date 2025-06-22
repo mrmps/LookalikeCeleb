@@ -1,6 +1,6 @@
 
 import React, { useRef } from 'react';
-import { Camera, Upload, Image, ArrowRight, CheckCircle } from 'lucide-react';
+import { Camera, Upload, Image, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
@@ -35,31 +35,31 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
   return (
     <div className="space-y-6 upload-section">
       {/* Main Upload Card */}
-      <Card className="bg-white rounded-3xl p-8 lg:p-10 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+      <Card className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Image className="w-8 h-8 lg:w-10 lg:h-10 text-gray-600" />
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <Image className="w-8 h-8 text-gray-600" />
           </div>
-          <h3 className="text-xl lg:text-2xl font-semibold text-gray-900 mb-3">Upload Your Photo</h3>
-          <p className="text-gray-600 leading-relaxed lg:text-lg">Take or choose a clear photo of your face for the most accurate results</p>
+          <h3 className="text-xl font-semibold text-gray-900 mb-3">Upload Your Photo</h3>
+          <p className="text-gray-600 leading-relaxed">Take or choose a clear photo of your face</p>
         </div>
 
         <div className="space-y-4">
           <Button 
             onClick={handleUploadClick}
-            className="w-full h-14 lg:h-16 bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-semibold rounded-2xl shadow-lg transition-all duration-200 active:scale-[0.98] lg:text-lg"
+            className="w-full h-14 bg-black hover:bg-gray-800 text-white font-semibold rounded-2xl transition-all duration-200"
           >
-            <Camera className="w-5 h-5 lg:w-6 lg:h-6 mr-3" />
+            <Camera className="w-5 h-5 mr-3" />
             Take Photo
-            <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5 ml-auto" />
+            <ArrowRight className="w-4 h-4 ml-auto" />
           </Button>
 
           <Button 
             onClick={handleUploadClick}
             variant="outline"
-            className="w-full h-14 lg:h-16 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all duration-200 active:scale-[0.98] lg:text-lg"
+            className="w-full h-14 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-semibold rounded-2xl hover:bg-gray-50 transition-all duration-200"
           >
-            <Upload className="w-5 h-5 lg:w-6 lg:h-6 mr-3" />
+            <Upload className="w-5 h-5 mr-3" />
             Choose from Gallery
           </Button>
 
@@ -67,15 +67,15 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-sm uppercase">
-              <span className="bg-white px-4 text-gray-500 font-medium">or try a demo</span>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-4 text-gray-500">or try a demo</span>
             </div>
           </div>
 
           <Button 
             onClick={handleDemoImage}
             variant="outline"
-            className="w-full h-12 lg:h-14 border border-gray-200 text-gray-600 font-medium rounded-2xl hover:bg-gray-50 transition-all duration-200 active:scale-[0.98]"
+            className="w-full h-12 border border-gray-200 text-gray-600 rounded-2xl hover:bg-gray-50 transition-all duration-200"
           >
             Use Demo Photo
           </Button>
@@ -91,21 +91,11 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
         />
       </Card>
 
-      {/* Enhanced Security Note */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
-        <div className="flex items-start gap-4">
-          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-            <CheckCircle className="w-4 h-4 text-blue-600" />
-          </div>
-          <div>
-            <p className="font-semibold text-blue-900 mb-2">Your Privacy is Protected</p>
-            <ul className="text-sm text-blue-800 space-y-1">
-              <li>• Photos are processed securely and never stored</li>
-              <li>• No personal data is collected or shared</li>
-              <li>• Results are generated instantly and privately</li>
-            </ul>
-          </div>
-        </div>
+      {/* Privacy Note */}
+      <div className="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+        <p className="text-sm text-blue-800 text-center">
+          <span className="font-medium">Privacy Protected:</span> Photos are processed securely and never stored
+        </p>
       </div>
     </div>
   );
