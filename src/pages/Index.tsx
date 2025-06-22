@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import PhotoUpload from '@/components/PhotoUpload';
 import EnhancedResultsDisplay from '@/components/EnhancedResultsDisplay';
@@ -39,25 +38,38 @@ const Index = () => {
   // Processing State
   if (appState === 'processing') {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white flex flex-col">
         <Header />
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
-          <div className="w-24 h-24 rounded-2xl overflow-hidden mb-8 shadow-sm">
-            <img 
-              src="/lovable-uploads/d24d594a-33ec-4302-b4c9-8235382d96ff.png" 
-              alt="CelebLook Logo" 
-              className="w-full h-full object-cover"
-            />
-            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-3">Analyzing Your Photo</h2>
-          <p className="text-gray-600 text-center leading-relaxed mb-8 max-w-sm">
-            Our AI is comparing your features with thousands of celebrities...
+        <div className="flex flex-col items-center justify-center flex-1 px-6">
+          {/* Preview of the uploaded image with a gentle blur overlay */}
+          {uploadedImage && (
+            <div className="relative mb-10">
+              <img
+                src={uploadedImage}
+                alt="Uploaded"
+                className="w-28 h-28 rounded-2xl object-cover shadow-sm"
+              />
+
+              {/* Soft overlay & animated dots */}
+              <div className="absolute inset-0 rounded-2xl bg-white/60 backdrop-blur-sm flex items-center justify-center">
+                <div className="flex space-x-2">
+                  <span className="w-2 h-2 bg-gray-900 rounded-full animate-bounce" style={{ animationDelay: '-0.3s' }} />
+                  <span className="w-2 h-2 bg-gray-900 rounded-full animate-bounce" style={{ animationDelay: '-0.15s' }} />
+                  <span className="w-2 h-2 bg-gray-900 rounded-full animate-bounce" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4 text-center">Analyzing your photo…</h2>
+          <p className="text-gray-600 text-center leading-relaxed max-w-sm mb-12">
+            We're matching your features against thousands of celebrity profiles.
           </p>
-          <div className="w-full max-w-xs bg-gray-100 rounded-full h-2 mb-4">
-            <div className="bg-gray-900 h-2 rounded-full transition-all duration-1000" style={{width: '85%'}}></div>
+
+          {/* Subtle indeterminate progress bar */}
+          <div className="w-full max-w-xs h-1.5 bg-gray-100 rounded-full overflow-hidden relative">
+            <span className="absolute left-0 top-0 h-full w-2/3 bg-gray-900 rounded-full animate-pulse" />
           </div>
-          <p className="text-sm text-gray-500">Almost done...</p>
         </div>
       </div>
     );

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Star, Share2, RotateCcw, Trophy, Crown, Users, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -47,166 +46,199 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
   const topMatch = celebrityMatches[0];
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimatePercentages(true);
-    }, 500);
+    const timer = setTimeout(() => setAnimatePercentages(true), 300);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm p-6 border-b border-gray-100">
-        <div className="flex items-center justify-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Your Results</h1>
-              <p className="text-sm text-gray-500">Celebrity Match Found!</p>
+      {/* Clean Header */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="px-6 py-5">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center">
+                <Trophy className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">Your Celebrity Match</h1>
+                <p className="text-sm text-gray-500">Analysis Complete</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-6 max-w-md mx-auto">
-        {/* Top Match Highlight - Fixed Interwoven Circles */}
-        <Card className="bg-white p-8 shadow-sm border border-gray-100 rounded-xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 mb-6">
-              <Crown className="w-4 h-4 text-gray-700" />
-              <span className="text-sm font-medium text-gray-700">Best Match</span>
-            </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-3">{topMatch.name}</h2>
-            <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-0">
-              {topMatch.category}
-            </Badge>
+      <div className="px-4 py-6 space-y-6 max-w-md mx-auto">
+        {/* Best Match Badge */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
+            <Crown className="w-4 h-4 text-amber-700" />
+            <span className="text-sm font-medium text-amber-800">Best Match</span>
           </div>
+        </div>
 
-          {/* Properly Interwoven Circles Design */}
-          <div className="relative flex items-center justify-center mb-8 h-72">
-            {/* Left circle (Your photo) */}
-            <div className="relative z-10">
-              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
-                <img 
-                  src={uploadedImage} 
-                  alt="Your photo" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-3 py-1 shadow-md border border-gray-200">
-                <p className="text-xs font-medium text-gray-700">You</p>
+        {/* Native Comparison Container */}
+        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+          <div className="flex h-80">
+            {/* Your Photo - Left Side */}
+            <div className="flex-1 relative bg-gray-100">
+              <img 
+                src={uploadedImage} 
+                alt="Your photo" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                <div className="p-3">
+                  <p className="text-white text-sm font-medium">You</p>
+                </div>
               </div>
             </div>
             
-            {/* Right circle (Celebrity photo) - overlapping */}
-            <div className="relative z-10 -ml-16">
-              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-lg bg-white">
-                <img 
-                  src={topMatch.image} 
-                  alt={topMatch.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-3 py-1 shadow-md border border-gray-200">
-                <p className="text-xs font-medium text-gray-700">{topMatch.name}</p>
-              </div>
+            {/* Native Separator */}
+            <div className="relative flex-shrink-0 flex items-stretch pointer-events-none z-20">
+              {/* Subtle translucent line */}
+              <div className="w-[2px] bg-white/70 backdrop-blur-sm" />
+              {/* VS pill */}
+              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/90 text-gray-900 text-[10px] font-semibold leading-none px-2 py-0.5 rounded-full shadow-sm select-none">
+                VS
+              </span>
             </div>
-
-            {/* Match percentage in center overlap */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-2 border-gray-100">
-              <div className="text-center">
-                <div className="text-lg font-bold text-gray-900">
-                  {animatePercentages ? topMatch.percentage : 0}%
+            
+            {/* Celebrity Photo - Right Side */}
+            <div className="flex-1 relative bg-gray-100">
+              <img 
+                src={topMatch.image} 
+                alt={topMatch.name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                <div className="p-3">
+                  <p className="text-white text-sm font-medium">{topMatch.name}</p>
                 </div>
-                <p className="text-xs text-gray-500 font-medium -mt-1">Match</p>
               </div>
             </div>
           </div>
-
+        </div>
+        
+        {/* Native Match Display */}
+        <div className="text-center space-y-3">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{topMatch.name}</h2>
+            <p className="text-sm text-gray-500 mt-1">{topMatch.category}</p>
+          </div>
+          
+          <div className="inline-flex items-center gap-2 bg-green-50 rounded-full px-4 py-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm font-semibold text-green-800">
+              {animatePercentages ? topMatch.percentage : 0}% Match
+            </span>
+          </div>
+        </div>
+        
+        {/* Native Action Button */}
+        <div className="pt-2">
           <Button 
             onClick={onShare}
-            className="w-full bg-gray-900 text-white hover:bg-gray-800 h-12 rounded-xl font-medium"
+            className="w-full bg-gray-900 hover:bg-gray-800 text-white h-12 rounded-2xl font-medium shadow-sm active:scale-[0.98] transition-all"
           >
             <Share2 className="w-4 h-4 mr-2" />
             Share Your Match
           </Button>
-        </Card>
-
-        {/* All Matches */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            All Your Matches
-          </h3>
-          
-          {celebrityMatches.map((celebrity, index) => (
-            <Card key={celebrity.name} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <img 
-                    src={celebrity.image} 
-                    alt={celebrity.name}
-                    className="w-20 h-20 rounded-xl object-cover border-2 border-gray-200 shadow-sm"
-                  />
-                  {index === 0 && (
-                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                      <Star className="w-3 h-3 text-yellow-900 fill-current" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{celebrity.name}</h4>
-                    <span className="text-xl font-bold text-gray-900">
-                      {animatePercentages ? celebrity.percentage : 0}%
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mb-3">{celebrity.description}</p>
-                  
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div 
-                      className="bg-gray-900 h-2 rounded-full transition-all duration-1000 ease-out"
-                      style={{
-                        width: animatePercentages ? `${celebrity.percentage}%` : '0%'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
         </div>
 
-        {/* Global Stats */}
-        <Card className="bg-white rounded-xl p-6 border border-gray-100">
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            <h3 className="font-semibold text-gray-900">Your Ranking</h3>
+        {/* All Matches Section */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900">All Your Matches</h3>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">Top 15%</div>
-              <p className="text-sm text-gray-500">Global Ranking</p>
+          <div className="space-y-3">
+            {celebrityMatches.map((celebrity, index) => (
+              <Card 
+                key={celebrity.name} 
+                className={`bg-white border border-gray-200 rounded-xl ${
+                  index === 0 ? 'ring-2 ring-gray-900' : ''
+                }`}
+              >
+                <div className="p-4">
+                  <div className="flex items-center gap-4">
+                    {/* Celebrity Image */}
+                    <div className="relative">
+                      <img 
+                        src={celebrity.image} 
+                        alt={celebrity.name}
+                        className="w-14 h-14 rounded-xl object-cover border border-gray-200"
+                      />
+                      {index === 0 && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center">
+                          <Star className="w-2.5 h-2.5 text-white fill-current" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Celebrity Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h4 className="font-semibold text-gray-900 truncate">{celebrity.name}</h4>
+                        <span className="text-lg font-bold text-gray-900">
+                          {animatePercentages ? celebrity.percentage : 0}%
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-gray-500 mb-2">{celebrity.description}</p>
+                      
+                      {/* Progress Bar */}
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div 
+                          className={`h-1.5 rounded-full transition-all duration-1000 ease-out ${
+                            index === 0 ? 'bg-gray-900' : 'bg-gray-400'
+                          }`}
+                          style={{
+                            width: animatePercentages ? `${celebrity.percentage}%` : '0%'
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Stats Card */}
+        <Card className="bg-white border border-gray-200 rounded-xl">
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-white" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Your Ranking</h3>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">4.2M</div>
-              <p className="text-sm text-gray-500">Total Matches</p>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900 mb-1">Top 15%</div>
+                <p className="text-sm text-gray-500">Global Ranking</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900 mb-1">4.2M</div>
+                <p className="text-sm text-gray-500">Total Matches</p>
+              </div>
             </div>
           </div>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="space-y-3 pt-4">
+        {/* Action Button */}
+        <div className="pt-2">
           <Button 
             onClick={onReset}
             variant="outline"
-            className="w-full h-12 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50"
+            className="w-full h-12 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50"
           >
-            <RotateCcw className="w-5 h-5 mr-2" />
+            <RotateCcw className="w-4 h-4 mr-2" />
             Try Another Photo
           </Button>
         </div>
@@ -216,3 +248,4 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
 };
 
 export default EnhancedResultsDisplay;
+
