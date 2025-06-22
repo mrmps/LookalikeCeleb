@@ -71,7 +71,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
       </div>
 
       <div className="p-6 space-y-6 max-w-md mx-auto">
-        {/* Top Match Highlight - Extra Large Images */}
+        {/* Top Match Highlight - Intertwining Circles */}
         <Card className="bg-white p-8 shadow-sm border border-gray-100 rounded-xl">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 mb-6">
@@ -84,31 +84,50 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
             </Badge>
           </div>
 
-          {/* Extra Large Comparison Images */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex-1 text-center">
-              <img 
-                src={uploadedImage} 
-                alt="Your photo" 
-                className="w-32 h-32 rounded-2xl object-cover border-2 border-gray-200 mx-auto mb-4 shadow-sm"
-              />
-              <p className="text-sm text-gray-600 font-medium">You</p>
+          {/* Intertwining Circles with Maximum Size Images */}
+          <div className="relative flex items-center justify-center mb-8 h-80">
+            {/* Background circles for visual effect */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-60 h-60 border-4 border-gray-200 rounded-full absolute -translate-x-8"></div>
+              <div className="w-60 h-60 border-4 border-gray-300 rounded-full absolute translate-x-8"></div>
             </div>
             
-            <div className="text-center px-2">
-              <div className="text-5xl font-bold text-gray-900 mb-2">
-                {animatePercentages ? topMatch.percentage : 0}%
+            {/* Your photo circle - left side */}
+            <div className="relative z-10 -mr-16">
+              <div className="w-56 h-56 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                <img 
+                  src={uploadedImage} 
+                  alt="Your photo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <p className="text-sm text-gray-500 font-medium">Match</p>
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow-md border border-gray-200">
+                <p className="text-sm font-medium text-gray-700">You</p>
+              </div>
             </div>
             
-            <div className="flex-1 text-center">
-              <img 
-                src={topMatch.image} 
-                alt={topMatch.name}
-                className="w-32 h-32 rounded-2xl object-cover border-2 border-gray-200 mx-auto mb-4 shadow-sm"
-              />
-              <p className="text-sm text-gray-600 font-medium">{topMatch.name}</p>
+            {/* Celebrity photo circle - right side */}
+            <div className="relative z-10 -ml-16">
+              <div className="w-56 h-56 rounded-full overflow-hidden border-4 border-white shadow-lg">
+                <img 
+                  src={topMatch.image} 
+                  alt={topMatch.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-4 py-2 shadow-md border border-gray-200">
+                <p className="text-sm font-medium text-gray-700">{topMatch.name}</p>
+              </div>
+            </div>
+
+            {/* Match percentage in center */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 bg-white rounded-full w-20 h-20 flex items-center justify-center shadow-lg border-4 border-gray-100">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {animatePercentages ? topMatch.percentage : 0}%
+                </div>
+                <p className="text-xs text-gray-500 font-medium">Match</p>
+              </div>
             </div>
           </div>
 
@@ -121,7 +140,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
           </Button>
         </Card>
 
-        {/* All Matches with Larger Images */}
+        {/* All Matches */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <Users className="w-5 h-5" />

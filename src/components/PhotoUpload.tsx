@@ -10,6 +10,7 @@ interface PhotoUploadProps {
 
 const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -27,9 +28,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
     fileInputRef.current?.click();
   };
 
-  // For demo purposes, we'll use placeholder images
-  const handleTakePhoto = () => {
-    onImageUpload("https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=400&q=80");
+  const handleCameraClick = () => {
+    cameraInputRef.current?.click();
   };
 
   return (
@@ -46,7 +46,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
           </Button>
 
           <Button 
-            onClick={handleTakePhoto}
+            onClick={handleCameraClick}
             variant="outline"
             className="w-full h-14 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 text-lg"
           >
@@ -61,7 +61,15 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
           accept="image/*"
           onChange={handleFileSelect}
           className="hidden"
-          capture="user"
+        />
+
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+          capture="environment"
         />
       </Card>
 
