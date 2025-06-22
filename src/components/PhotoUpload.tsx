@@ -38,20 +38,20 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
       <Card className="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
         <div className="space-y-4">
           <Button 
-            onClick={handleTakePhoto}
+            onClick={handleUploadClick}
             className="w-full h-14 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-xl text-lg"
           >
-            <Camera className="w-6 h-6 mr-3" />
-            Take Photo
+            <Upload className="w-6 h-6 mr-3" />
+            Choose from Gallery
           </Button>
 
           <Button 
-            onClick={handleUploadClick}
+            onClick={handleTakePhoto}
             variant="outline"
             className="w-full h-14 border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 text-lg"
           >
-            <Upload className="w-6 h-6 mr-3" />
-            Upload Photo
+            <Camera className="w-6 h-6 mr-3" />
+            Use Camera
           </Button>
         </div>
 
