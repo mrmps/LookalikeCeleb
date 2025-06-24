@@ -296,9 +296,10 @@ export { routes as app };
 
 // Convenience bootstrap if run directly with tsx/bun/node
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
-  serve({ fetch: app.fetch, port: PORT, hostname: '0.0.0.0' });
-  console.log(`🚀 Hono server running on http://0.0.0.0:${PORT}`);
+  const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+  const HOST = process.env.HOSTNAME || '0.0.0.0';
+  serve({ fetch: app.fetch, port: PORT, hostname: HOST });
+  console.log(`🚀 Hono server running on http://${HOST}:${PORT}`);
 }
 
 export type AppType = typeof routes;
