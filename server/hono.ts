@@ -1,6 +1,13 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
+
+interface CelebrityMatch {
+  name: string;
+  percentage: number;
+  description: string;
+}
 
 // Yahoo Image Search function
 const searchCelebrityImage = async (celebrityName: string): Promise<string> => {
@@ -34,47 +41,34 @@ const searchCelebrityImage = async (celebrityName: string): Promise<string> => {
   }
 };
 
-// Inference.net API call for celebrity matching
-const analyzeCelebrityMatch = async (imageBase64: string) => {
+// Inference.net API call for celebrity matching with timeout and retry logic
+const analyzeCelebrityMatch = async (imageBase64: string, retryCount = 0) => {
   // Check if API key is configured
   if (!process.env.INFERENCE_API_KEY) {
     throw new Error('INFERENCE_API_KEY not configured. Please set your API key in the .env file.');
   }
 
+  const MAX_RETRIES = 2;
+  const TIMEOUT_MS = 60000; // 60 seconds timeout
+
   try {
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
     const response = await fetch('https://api.inference.net/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.INFERENCE_API_KEY}`,
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: 'google/gemma-3-27b-instruct/bf-16',
         messages: [
           {
             role: 'system',
-            content: `You are a world-class facial recognition and celebrity matching expert with deep knowledge of facial anatomy, biometrics, and entertainment industry figures. Your analysis should be precise, scientific, and highly detailed.
-
-CRITICAL INSTRUCTIONS:
-1. Analyze facial features with forensic-level precision
-2. Each celebrity match MUST have completely unique descriptions - NO repetition of phrases
-3. Focus on measurable, specific facial characteristics
-4. Use varied, rich vocabulary for each description
-5. Avoid generic terms like "similar facial structure" or "resemblance"
-
-FACIAL ANALYSIS FRAMEWORK:
-- Cranial proportions and skull shape
-- Eye morphology (shape, spacing, tilt, lid structure)
-- Nasal anatomy (bridge width, nostril shape, tip projection)
-- Oral features (lip fullness, mouth width, cupid's bow)
-- Mandibular structure (jaw angle, chin projection, width)
-- Zygomatic bones (cheekbone height, prominence, width)
-- Forehead dimensions and hairline patterns
-- Ear shape and positioning
-- Skin texture and complexion characteristics
-- Facial symmetry and golden ratio measurements
-
-For each match, provide DISTINCT analysis focusing on different feature combinations.`
+            content: 'You are an expert facial recognition specialist with advanced training in celebrity identification. Your sophisticated AI algorithms analyze facial geometry, bone structure, and distinctive features to detect precise celebrity matches. You ALWAYS identify exactly 3 matches with scientific confidence.'
           },
           {
             role: 'user',
@@ -85,30 +79,21 @@ For each match, provide DISTINCT analysis focusing on different feature combinat
               },
               {
                 type: 'text',
-                text: `Perform a comprehensive facial analysis of this person and identify the TOP 3 celebrity matches based on biometric similarity.
+                text: `Analyze this facial image using advanced biometric detection algorithms. Identify the TOP 3 celebrity matches based on:
 
-FOR EACH MATCH, YOU MUST PROVIDE:
+- apparent gender, age, ethnicity, and hair color
+- Facial bone structure and geometry
+- Eye shape, color,spacing, and proportions  
+- Nose bridge and nostril configuration
+- Jawline definition and chin structure
+- Cheekbone prominence and facial symmetry
 
-1. UNIQUE FEATURE ANALYSIS: Focus on a different set of facial characteristics for each celebrity. For example:
-   - Match 1: Focus on eye shape, brow ridge, and nasal profile
-   - Match 2: Focus on jawline, chin, and mouth structure
-   - Match 3: Focus on cheekbones, forehead, and overall proportions
+For each detected match:
+- State your detection confidence based on facial feature analysis
+- Provide a brief fact about why this celebrity is notable
+- Use professional but engaging tone
 
-2. SPECIFIC MEASUREMENTS: Include precise observations like:
-   - "Almond-shaped eyes with a 15-degree upward tilt"
-   - "Square jaw with 110-degree mandibular angle"
-   - "High-set cheekbones creating a 2:3 facial ratio"
-
-3. DISTINCTIVE COMPARISONS: Each comparison must highlight completely different aspects:
-   - Don't repeat phrases across matches
-   - Use varied anatomical terminology
-   - Focus on unique distinguishing features for each celebrity
-
-4. PROFESSIONAL BACKGROUND: Brief, relevant career highlights
-
-5. CONFIDENCE SCORING: Base percentages on actual facial similarity, not just general appearance
-
-IMPORTANT: Each description must be substantively different. If you mention "strong jawline" for one match, describe it differently for others (e.g., "angular mandible," "defined chin," "prominent jaw angle").`
+CRITICAL: Return exactly 3 matches - no exceptions. Base matches on actual facial feature detection, not random selection. Return the matches as JSON and also return confidence and a short description of the match. DO NOT USE MARKDOWN, especially for descriptions. No more than 3 sentences for descriptions!`
               }
             ]
           }
@@ -121,26 +106,23 @@ IMPORTANT: Each description must be substantively different. If you mention "str
             schema: {
               type: 'object',
               properties: {
-                analysis: { type: 'string' },
                 matches: {
                   type: 'array',
+                  minItems: 3,
+                  maxItems: 3,
                   items: {
                     type: 'object',
                     properties: {
                       name: { type: 'string' },
-                      percentage: { type: 'number' },
-                      description: { type: 'string' },
-                      confidence: { type: 'string' },
-                      category: { type: 'string' },
-                      celebrity_info: { type: 'string' },
-                      feature_comparison: { type: 'string' }
+                      percentage: { type: 'number', minimum: 70, maximum: 99 },
+                      description: { type: 'string', maxLength: 500 }
                     },
-                    required: ['name', 'percentage', 'description', 'confidence', 'category', 'celebrity_info', 'feature_comparison'],
+                    required: ['name', 'percentage', 'description'],
                     additionalProperties: false
                   }
                 }
               },
-              required: ['analysis', 'matches'],
+              required: ['matches'],
               additionalProperties: false
             }
           }
@@ -148,8 +130,18 @@ IMPORTANT: Each description must be substantively different. If you mention "str
       })
     });
 
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       const errorText = await response.text();
+      
+      // Check if it's a timeout error (524) and retry
+      if (response.status === 524 && retryCount < MAX_RETRIES) {
+        console.log(`API timeout, retrying... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1))); // Exponential backoff
+        return analyzeCelebrityMatch(imageBase64, retryCount + 1);
+      }
+      
       throw new Error(`Inference API error (${response.status}): ${errorText}`);
     }
 
@@ -158,26 +150,45 @@ IMPORTANT: Each description must be substantively different. If you mention "str
     
     // Add celebrity images to each match
     const matchesWithImages = await Promise.all(
-      result.matches.map(async (match: any) => ({
+      result.matches.map(async (match: CelebrityMatch) => ({
         ...match,
         image: await searchCelebrityImage(match.name)
       }))
     );
 
     return { 
-      analysis: result.analysis,
       matches: matchesWithImages 
     };
   } catch (error) {
     console.error('Error analyzing celebrity match:', error);
-    throw error; // Re-throw the error instead of returning dummy data
+    
+    // Handle specific error types and provide fallback
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        // If it's our timeout, try to retry
+        if (retryCount < MAX_RETRIES) {
+          console.log(`Request timeout, retrying... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, 3000 * (retryCount + 1))); // Longer wait for timeout retries
+          return analyzeCelebrityMatch(imageBase64, retryCount + 1);
+        }
+        throw new Error('Request timed out after multiple attempts. The AI service may be overloaded.');
+      }
+      
+      if (error.message.includes('524') && retryCount < MAX_RETRIES) {
+        console.log(`Server timeout (524), retrying... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, 5000 * (retryCount + 1))); // Even longer wait for 524 errors
+        return analyzeCelebrityMatch(imageBase64, retryCount + 1);
+      }
+    }
+    
+    throw error; // Re-throw the error if we can't handle it
   }
 };
 
 // Create Hono app with CORS and proper route typing
 const app = new Hono()
   .use('*', cors({
-    origin: ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://localhost:8083', 'http://localhost:8084'],
+    origin: ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://localhost:8083', 'http://localhost:8084', 'http://localhost:8085'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowHeaders: ['Content-Type', 'Authorization'],
   }))
@@ -211,11 +222,19 @@ const routes = app
         }, 503);
       }
       
-      if (errorMessage.includes('Inference API error')) {
+      if (errorMessage.includes('Request timed out after multiple attempts')) {
         return c.json({ 
-          error: 'AI Service Error',
-          message: errorMessage,
-          instructions: 'The AI service is temporarily unavailable. Please try again later.'
+          error: 'Service Timeout',
+          message: 'The AI service is currently overloaded and taking too long to respond.',
+          instructions: 'Please try again in a few minutes. If the problem persists, the service may be experiencing high traffic.'
+        }, 504);
+      }
+      
+      if (errorMessage.includes('524') || errorMessage.includes('Inference API error')) {
+        return c.json({ 
+          error: 'AI Service Unavailable',
+          message: 'The AI service is temporarily experiencing issues.',
+          instructions: 'This is usually temporary. Please wait a few minutes and try again.'
         }, 502);
       }
       
@@ -225,6 +244,46 @@ const routes = app
       }, 500);
     }
   })
+
+// Server-side image proxy → base64 (avoids browser CORS)
+app.get('/api/base64', async (c) => {
+  const url = c.req.query('url');
+  if (!url) return c.json({ error: 'Missing url param' }, 400);
+
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) return c.json({ error: 'Failed to fetch image' }, 502);
+
+    const contentType = resp.headers.get('content-type') || 'image/jpeg';
+    const arrayBuffer = await resp.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString('base64');
+    const dataUrl = `data:${contentType};base64,${base64}`;
+    return c.json({ data: dataUrl });
+  } catch (err) {
+    return c.json({ error: 'Error fetching image' }, 500);
+  }
+});
+
+// Only serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the React build
+  app.use('/assets/*', serveStatic({ root: './dist' }));
+  app.use('/lovable-uploads/*', serveStatic({ root: './public' }));
+
+  // Serve the React app for all non-API routes
+  app.get('*', serveStatic({ 
+    root: './dist',
+    rewriteRequestPath: (path) => path === '/' ? '/index.html' : path
+  }));
+} else {
+  // In development, just serve public assets and let Vite handle the rest
+  app.use('/lovable-uploads/*', serveStatic({ root: './public' }));
+  
+  // Simple 404 handler for development (no redirect loops)
+  app.notFound((c) => {
+    return c.json({ error: 'Route not found', path: c.req.path }, 404);
+  });
+}
 
 export { routes as app };
 
@@ -236,4 +295,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 // Export the app type for RPC client
-export type AppType = typeof routes; 
+export type AppType = typeof routes;

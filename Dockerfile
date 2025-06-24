@@ -2,31 +2,40 @@
 FROM oven/bun:1.1 AS builder
 WORKDIR /app
 
-# Install system dependencies (none needed for bun/elysia)
+# Copy package files first for better layer caching
+COPY package*.json bun.lockb ./
+COPY server/package*.json server/tsconfig.json ./server/
+
+# Install dependencies
+RUN bun install --frozen-lockfile
 
 # Copy project files
 COPY . .
 
-# Install Node/Bun dependencies
-RUN bun install --frozen-lockfile
-
 # Build the React client (outputs to ./dist)
 RUN bun run build
-
-# Compile the Elysia server to a single JS file for production
-RUN bun build --compile --minify-syntax --minify-whitespace \
-  server/index.ts --outfile server.js
 
 # ---- Production stage ----
 FROM oven/bun:1.1-slim AS runner
 WORKDIR /app
 
-# Copy compiled artifacts from builder
+# Install Node.js for @hono/node-server
+RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
+
+# Copy built frontend
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.js ./server.js
+
+# Copy server files and dependencies
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/package.json ./
+
+# Copy public assets that the server might need to serve
+COPY --from=builder /app/public ./public
 
 # Expose server port
 ENV PORT=3001
 EXPOSE 3001
 
-CMD ["bun", "server.js"] 
+# Start the Hono server with tsx
+CMD ["npx", "tsx", "server/index.ts"] 

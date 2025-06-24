@@ -18,12 +18,9 @@ type Match = {
   description: string;
   confidence: string;
   category: string;
-  celebrity_info: string;
-  feature_comparison: string;
 };
 
 type AnalysisResult = {
-  analysis: string;
   matches: Match[];
 };
 
@@ -55,7 +52,6 @@ const Index = () => {
     const data = await res.json();
     // The server now returns both analysis and matches
     return {
-      analysis: data.analysis || 'Analysis completed successfully.',
       matches: data.matches || []
     };
   };
@@ -270,19 +266,17 @@ const Index = () => {
         <EnhancedResultsDisplay 
           uploadedImage={uploadedImage} 
           matches={analysisResult.matches}
-          analysis={analysisResult.analysis}
           onReset={resetApp}
           onShare={handleShare}
         />
-        {showShareCard && (
-          <ShareCard 
-            userImage={uploadedImage}
-            celebrityName={matchData?.name || "Ryan Gosling"}
-            celebrityImage={matchData?.image || "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80"}
-            percentage={matchData?.percentage || 89}
-            onClose={handleShareClose}
-          />
-        )}
+        <ShareCard 
+          userImage={uploadedImage}
+          celebrityName={matchData?.name || "Ryan Gosling"}
+          celebrityImage={matchData?.image || "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80"}
+          percentage={matchData?.percentage || 89}
+          open={showShareCard}
+          onOpenChange={setShowShareCard}
+        />
       </>
     );
   }
@@ -297,7 +291,7 @@ const Index = () => {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-8 shadow-sm overflow-hidden">
             <img 
               src="/lovable-uploads/d24d594a-33ec-4302-b4c9-8235382d96ff.png" 
-              alt="CelebLook Logo" 
+              alt="LookalikeCeleb Logo" 
               className="w-full h-full object-cover"
             />
           </div>

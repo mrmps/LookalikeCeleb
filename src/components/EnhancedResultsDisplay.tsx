@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Share2, RotateCcw, Trophy, Crown, Users, TrendingUp, Info, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Star, Share2, RotateCcw, Trophy, Crown, Users, TrendingUp, Eye, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
   matches: Match[];
-  analysis?: string;
   onReset: () => void;
   onShare: (matchData: { name: string; image: string; percentage: number }) => void;
 }
@@ -18,28 +17,25 @@ type Match = {
   description: string;
   confidence: string;
   category: string;
-  celebrity_info: string;
-  feature_comparison: string;
 };
 
 const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({ 
   uploadedImage,
   matches,
-  analysis,
   onReset, 
   onShare 
 }) => {
   const [animatePercentages, setAnimatePercentages] = useState(false);
-  const [expandedMatch, setExpandedMatch] = useState<number | null>(null);
-  const topMatch = matches[0];
+  const [selectedMatchIndex, setSelectedMatchIndex] = useState(0);
+  const selectedMatch = matches[selectedMatchIndex];
 
   useEffect(() => {
     // Start animation immediately since data is already available
     setTimeout(() => setAnimatePercentages(true), 100);
   }, []);
 
-  const toggleMatchDetails = (index: number) => {
-    setExpandedMatch(expandedMatch === index ? null : index);
+  const handleSelectMatch = (index: number) => {
+    setSelectedMatchIndex(index);
   };
 
   return (
@@ -62,8 +58,6 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
       </div>
 
       <div className="px-4 py-6 space-y-6 max-w-md mx-auto">
-        {/* Analysis Overview */}
-        {analysis && (
           <Card className="bg-blue-50 border border-blue-200 rounded-xl">
             <div className="p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -71,17 +65,18 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                 <h3 className="font-semibold text-blue-900">Photo Analysis</h3>
               </div>
               <p className="text-sm text-blue-800 leading-relaxed">
-                {analysis}
+                {selectedMatch.description}
               </p>
             </div>
           </Card>
-        )}
 
-        {/* Best Match Badge */}
+        {/* Selected Match Badge */}
         <div className="text-center">
           <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-full px-4 py-2">
             <Crown className="w-4 h-4 text-amber-700" />
-            <span className="text-sm font-medium text-amber-800">Best Match</span>
+            <span className="text-sm font-medium text-amber-800">
+              {selectedMatchIndex === 0 ? 'Best Match' : 'Selected Match'}
+            </span>
           </div>
         </div>
 
@@ -115,13 +110,13 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
             {/* Celebrity Photo - Right Side */}
             <div className="flex-1 relative bg-gray-100">
               <img 
-                src={topMatch.image} 
-                alt={topMatch.name}
+                src={selectedMatch.image} 
+                alt={selectedMatch.name}
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                 <div className="p-3">
-                  <p className="text-white text-sm font-medium">{topMatch.name}</p>
+                  <p className="text-white text-sm font-medium">{selectedMatch.name}</p>
                 </div>
               </div>
             </div>
@@ -131,52 +126,37 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
         {/* Native Match Display */}
         <div className="text-center space-y-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{topMatch.name}</h2>
-            <p className="text-sm text-gray-500 mt-1">{topMatch.category}</p>
+            <h2 className="text-2xl font-bold text-gray-900">{selectedMatch.name}</h2>
+            <p className="text-sm text-gray-500 mt-1">{selectedMatch.category}</p>
           </div>
           
           <div className="inline-flex items-center gap-2 bg-green-50 rounded-full px-4 py-2">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             <span className="text-sm font-semibold text-green-800">
-              {animatePercentages ? topMatch.percentage : 0}% Match
+              {animatePercentages ? selectedMatch.percentage : 0}% Match
             </span>
           </div>
         </div>
-
-        {/* Feature Analysis for Top Match */}
-        {topMatch.feature_comparison && (
-          <Card className="bg-white border border-gray-200 rounded-xl">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Eye className="w-4 h-4 text-blue-600" />
-                <h3 className="font-semibold text-gray-900">Why You Match</h3>
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {topMatch.feature_comparison}
-              </p>
-            </div>
-          </Card>
-        )}
-
-        {/* Celebrity Info for Top Match */}
-        {topMatch.celebrity_info && (
-          <Card className="bg-white border border-gray-200 rounded-xl">
-            <div className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Info className="w-4 h-4 text-purple-600" />
-                <h3 className="font-semibold text-gray-900">About {topMatch.name}</h3>
-              </div>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {topMatch.celebrity_info}
-              </p>
-            </div>
-          </Card>
-        )}
         
         {/* Native Action Button */}
         <div className="pt-2">
           <Button 
-            onClick={() => onShare({ name: topMatch.name, image: topMatch.image, percentage: topMatch.percentage })}
+            onClick={async () => {
+              const convertToBase64 = async (url: string): Promise<string> => {
+                if (url.startsWith('data:')) return url;
+                try {
+                  const res = await fetch(`http://localhost:3001/api/base64?url=${encodeURIComponent(url)}`);
+                  const data = await res.json();
+                  return data.data || url;
+                } catch (_) {
+                  return url;
+                }
+              };
+
+              const base64Image = await convertToBase64(selectedMatch.image);
+
+              onShare({ name: selectedMatch.name, image: base64Image, percentage: selectedMatch.percentage });
+            }}
             className="w-full bg-gray-900 hover:bg-gray-800 text-white h-12 rounded-2xl font-medium shadow-sm active:scale-[0.98] transition-all"
           >
             <Share2 className="w-4 h-4 mr-2" />
@@ -189,15 +169,21 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
           <div className="flex items-center gap-3">
             <Users className="w-5 h-5 text-gray-600" />
             <h3 className="text-lg font-semibold text-gray-900">All Your Matches</h3>
+            <span className="text-sm text-gray-500">Tap to compare</span>
           </div>
           
           <div className="space-y-3">
             {matches.map((celebrity, index) => (
               <Card 
                 key={celebrity.name} 
-                className={`bg-white border border-gray-200 rounded-xl ${
-                  index === 0 ? 'ring-2 ring-gray-900' : ''
+                className={`bg-white border-2 rounded-xl cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  index === selectedMatchIndex 
+                    ? 'border-gray-900 ring-2 ring-gray-900/20' 
+                    : index === 0 
+                      ? 'border-amber-200' 
+                      : 'border-gray-200 hover:border-gray-300'
                 }`}
+                onClick={() => handleSelectMatch(index)}
               >
                 <div className="p-4">
                   <div className="flex items-center gap-4">
@@ -213,6 +199,11 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                           <Star className="w-2.5 h-2.5 text-white fill-current" />
                         </div>
                       )}
+                      {index === selectedMatchIndex && (
+                        <div className="absolute -top-1 -left-1 w-5 h-5 bg-gray-900 rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </div>
+                      )}
                     </div>
                     
                     {/* Celebrity Info */}
@@ -224,100 +215,27 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                         </span>
                       </div>
                       
-                      <p className="text-sm text-gray-500 mb-2">{celebrity.description}</p>
+                      <p className="text-sm text-gray-600 mb-2 leading-relaxed">{celebrity.description}</p>
                       
                       {/* Progress Bar */}
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
                         <div 
                           className={`h-1.5 rounded-full transition-all duration-1000 ease-out ${
-                            index === 0 ? 'bg-gray-900' : 'bg-gray-400'
+                            index === selectedMatchIndex ? 'bg-gray-900' : 
+                            index === 0 ? 'bg-amber-400' : 'bg-gray-400'
                           }`}
                           style={{
                             width: animatePercentages ? `${celebrity.percentage}%` : '0%'
                           }}
                         />
                       </div>
-
-                      {/* Expand Details Button */}
-                      {(celebrity.feature_comparison || celebrity.celebrity_info) && (
-                        <Button
-                          onClick={() => toggleMatchDetails(index)}
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-1 text-xs text-gray-500 hover:text-gray-700"
-                        >
-                          {expandedMatch === index ? (
-                            <>
-                              <ChevronUp className="w-3 h-3 mr-1" />
-                              Hide details
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="w-3 h-3 mr-1" />
-                              Show details
-                            </>
-                          )}
-                        </Button>
-                      )}
                     </div>
                   </div>
-
-                  {/* Expanded Details */}
-                  {expandedMatch === index && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                      {celebrity.feature_comparison && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Eye className="w-3 h-3 text-blue-600" />
-                            <h5 className="text-xs font-semibold text-gray-900">Feature Analysis</h5>
-                          </div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
-                            {celebrity.feature_comparison}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {celebrity.celebrity_info && (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <Info className="w-3 h-3 text-purple-600" />
-                            <h5 className="text-xs font-semibold text-gray-900">About {celebrity.name}</h5>
-                          </div>
-                          <p className="text-xs text-gray-600 leading-relaxed">
-                            {celebrity.celebrity_info}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </Card>
             ))}
           </div>
         </div>
-
-        {/* Stats Card */}
-        <Card className="bg-white border border-gray-200 rounded-xl">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-4 h-4 text-white" />
-              </div>
-              <h3 className="font-semibold text-gray-900">Your Ranking</h3>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 mb-1">Top 15%</div>
-                <p className="text-sm text-gray-500">Global Ranking</p>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-gray-900 mb-1">4.2M</div>
-                <p className="text-sm text-gray-500">Total Matches</p>
-              </div>
-            </div>
-          </div>
-        </Card>
 
         {/* Action Button */}
         <div className="pt-2">

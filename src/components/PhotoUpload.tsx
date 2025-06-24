@@ -379,7 +379,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
         </Button>
 
         {/* Paste Option */}
-        <div className="relative">
+        <div className="relative hidden md:block">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-gray-200"/>
           </div>
@@ -388,7 +388,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
           </div>
         </div>
 
-        <div className="flex items-center justify-center p-4 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+        <div className="hidden md:flex items-center justify-center p-4 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
           <div className="text-center">
             <Clipboard className="w-6 h-6 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-600 font-medium">
