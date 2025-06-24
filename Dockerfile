@@ -34,9 +34,9 @@ COPY --from=builder /app/public ./public
 
 # Set production environment so Hono serves static files
 ENV NODE_ENV=production
-ENV PORT=3000
+# Don't set PORT - let Railway set it
 
-# Expose server port
+# Expose server port (Railway will override this)
 EXPOSE 3000
 
 # Start the Hono server which will serve both API and React app
