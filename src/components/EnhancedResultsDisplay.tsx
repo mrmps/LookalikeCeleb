@@ -131,7 +131,10 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
               const convertToBase64 = async (url: string): Promise<string> => {
                 if (url.startsWith('data:')) return url;
                 try {
-                  const res = await fetch(`http://localhost:3001/api/base64?url=${encodeURIComponent(url)}`);
+                  const apiUrl = import.meta.env.PROD 
+                    ? `/api/base64?url=${encodeURIComponent(url)}`
+                    : `http://localhost:3001/api/base64?url=${encodeURIComponent(url)}`;
+                  const res = await fetch(apiUrl);
                   const data = await res.json();
                   return data.data || url;
                 } catch (_) {

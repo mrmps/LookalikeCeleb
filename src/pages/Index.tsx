@@ -24,7 +24,11 @@ type AnalysisResult = {
   matches: Match[];
 };
 
-const client = hc<AppType>('http://localhost:3001/');
+const client = hc<AppType>(
+  import.meta.env.PROD 
+    ? '/' // Use relative URLs in production
+    : 'http://localhost:3001/' // Use localhost in development
+);
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>('landing');
