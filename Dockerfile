@@ -4,10 +4,9 @@ WORKDIR /app
 
 # Copy package files first for better layer caching
 COPY package*.json bun.lockb ./
-COPY server/package*.json server/tsconfig.json ./server/
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies (remove --frozen-lockfile to allow lockfile updates)
+RUN bun install
 
 # Copy project files
 COPY . .
