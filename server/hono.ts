@@ -269,7 +269,7 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static assets from the React build (JS, CSS, etc.)
   app.use('/assets/*', serveStatic({ root: './dist' }));
   
-  // Serve public assets (favicon, logo, etc.)
+  // Serve public assets
   app.use('/*', serveStatic({ root: './public' }));
   
   // Serve the React app for all non-API routes (SPA fallback)
