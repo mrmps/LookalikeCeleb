@@ -301,5 +301,4 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   console.log(`🚀 Hono server running on http://0.0.0.0:${PORT}`);
 }
 
-// Export the app type for RPC client
 export type AppType = typeof routes;
