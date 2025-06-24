@@ -289,8 +289,8 @@ const Index = () => {
         {/* Hero Section */}
         <div className="text-center pt-16 pb-12 px-6">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-8 shadow-sm overflow-hidden">
-            <img 
-              src="/lovable-uploads/d24d594a-33ec-4302-b4c9-8235382d96ff.png" 
+            <img
+              src="/logo.png" 
               alt="LookalikeCeleb Logo" 
               className="w-full h-full object-cover"
             />

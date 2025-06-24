@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Share2, RotateCcw, Trophy, Crown, Users, TrendingUp, Eye, Check } from 'lucide-react';
+import { Star, Share2, RotateCcw, Crown, Users, TrendingUp, Eye, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import Header from '@/components/Header';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
@@ -40,22 +41,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Clean Header */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="px-6 py-5">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gray-900 rounded-xl flex items-center justify-center">
-                <Trophy className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">Your Celebrity Match</h1>
-                <p className="text-sm text-gray-500">Analysis Complete</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Header />
 
       <div className="px-4 py-6 space-y-6 max-w-md mx-auto">
           <Card className="bg-blue-50 border border-blue-200 rounded-xl">

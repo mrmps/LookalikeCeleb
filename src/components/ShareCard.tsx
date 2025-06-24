@@ -75,6 +75,7 @@ const ShareCard = ({
   const [celebName, setCelebName] = useState(celebrityName);
   const [accent, setAccent] = useState('#000000');
   const [copied, setCopied] = useState(false);
+  const [sharesCopied, setSharesCopied] = useState(false);
 
   // Update celebrity name when prop changes
   useEffect(() => {
@@ -245,24 +246,43 @@ const ShareCard = ({
   };
 
   /* 2 ▸ provider‑specific share link */
-  const shareTo = () => {
-    const u = encodeURIComponent(origin);
-    const t = encodeURIComponent(shareText);
-    const links: Record<ProviderKey, string | undefined> = {
-      instagram: undefined,
-      snapchat: undefined,
-      twitter: `https://twitter.com/intent/tweet?text=${t}&url=${u}`,
-      facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
-      tiktok: undefined,
-      pinterest: `https://pinterest.com/pin/create/button/?url=${u}&description=${t}`,
-    };
-    const link = links[providerKey];
-    if (!link) {
-      navigator.clipboard.writeText(`${shareText} ${origin}`);
-      alert('Caption copied – paste it inside the app!');
-    } else {
-      window.open(link, '_blank', 'width=600,height=500');
+  const shareTo = async () => {
+    try {
+      // First copy the image to clipboard
+      const dataUrl = await makeImage();
+      if (!dataUrl) {
+        alert('Failed to generate image. Please try again.');
+        return;
+      }
+      
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      
+      setSharesCopied(true);
+      setTimeout(() => setSharesCopied(false), 2000);
+      
+      // Then open platform if it has a share URL
+      const u = encodeURIComponent(origin);
+      const t = encodeURIComponent(shareText);
+      const links: Record<ProviderKey, string> = {
+        instagram: 'https://www.instagram.com',
+        snapchat: 'https://web.snapchat.com',
+        twitter: `https://twitter.com/intent/tweet?text=${t}&url=${u}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
+        tiktok: 'https://www.tiktok.com',
+        pinterest: `https://pinterest.com/pin/create/button/?url=${u}&description=${t}`,
+      };
+      
+      const link = links[providerKey];
+      // Wait a bit longer to show the copied state before opening
+      setTimeout(() => {
+        window.open(link, '_blank', 'width=600,height=500');
+      }, 1500);
+    } catch (error) {
+      console.error('Failed to copy image to clipboard:', error);
+      alert('Failed to copy image to clipboard');
     }
   };
 
@@ -273,9 +293,9 @@ const ShareCard = ({
   return (
     <Wrapper open={open} onOpenChange={onOpenChange}>
       {isMobile && <DrawerHeader className="sr-only" />}
-      <WrapperContent className={cn('focus:outline-none', !isMobile && 'sm:max-w-md')}>
+      <WrapperContent className={cn('focus:outline-none max-h-[90vh]', !isMobile && 'sm:max-w-md p-0')}>
         {/* CONTROLS */}
-        <div className="space-y-6 p-6 max-h-[85vh] sm:max-h-[90vh] md:max-h-[95vh] overflow-y-auto">
+        <div className="space-y-6 p-6 max-h-[80vh] overflow-y-auto">
           {/* provider select */}
           <div>
             <Label className="mb-2 block text-sm">Choose platform</Label>
@@ -325,7 +345,7 @@ const ShareCard = ({
           {/* THE CARD (what gets captured) */}
           <div
             ref={cardRef}
-            className={cn(cardClass, 'relative bg-white rounded-2xl border mx-auto flex flex-col justify-center items-center p-6 mt-4')}
+            className={cn(cardClass, 'relative bg-white rounded-2xl border mx-auto flex flex-col overflow-hidden mt-4')}
             style={{
               ...(provider.ratio === '1/1' && {
                 aspectRatio: '1 / 1',
@@ -334,56 +354,66 @@ const ShareCard = ({
               })
             }}
           >
-            {/* subtle sparkles */}
-            <Sparkles className="absolute top-4 left-4 w-4 h-4 opacity-20"
-                      style={{ color: accent }} />
-            <Sparkles className="absolute bottom-4 right-4 w-3 h-3 opacity-20"
-                      style={{ color: accent }} />
-
-            <h2 className="text-center leading-tight font-bold mb-4">
-              YOU AND {celebName.toUpperCase()}?<br />
-              <span className="text-3xl" style={{ color: accent }}>{percentage}% TWIN!</span>
-            </h2>
-
-            <div className="relative flex items-center justify-center mb-4 gap-4">
-              {/* user */}
-              <figure className={cn(imgSize, 'rounded-full overflow-hidden border-4 border-white')}>
+            {/* Images taking up the entire top portion */}
+            <div className="flex flex-1 min-h-[60%] overflow-hidden rounded-t-2xl">
+              {/* Your Photo - Left Side */}
+              <div className="flex-1 relative bg-gray-100">
                 <img 
                   src={userImage} 
-                  alt={userName} 
-                  className="object-cover w-full h-full"
+                  alt={userName}
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     console.log('User image failed to load:', userImage);
                     e.currentTarget.style.backgroundColor = '#f3f4f6';
                   }}
                 />
-              </figure>
-              {/* badge */}
-              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <div className="rounded-full bg-white border-4 flex flex-col items-center justify-center w-16 h-16"
-                     style={{ borderColor: accent }}>
-                  <span className="font-black text-sm" style={{ color: accent }}>{percentage}%</span>
-                  <span className="text-[10px] font-bold">MATCH</span>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                  <div className="p-3">
+                    <p className="text-white text-sm font-medium">{userName}</p>
+                  </div>
                 </div>
               </div>
-              {/* celeb */}
-              <figure className={cn(imgSize, 'rounded-full overflow-hidden border-4 border-white')}>
-                <img src={celebrityImage} alt={celebName} className="object-cover w-full h-full" />
-              </figure>
+              
+              {/* VS Separator */}
+              <div className="relative flex-shrink-0 flex items-stretch pointer-events-none z-20">
+                <div className="w-[2px] bg-white/70 backdrop-blur-sm" />
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white/90 text-gray-900 text-[10px] font-semibold leading-none px-2 py-0.5 rounded-full shadow-sm select-none">
+                  VS
+                </span>
+              </div>
+              
+              {/* Celebrity Photo - Right Side */}
+              <div className="flex-1 relative bg-gray-100">
+                <img 
+                  src={celebrityImage} 
+                  alt={celebName}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                  <div className="p-3">
+                    <p className="text-white text-sm font-medium">{celebName}</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* names under images */}
-            <div className="flex items-center justify-center w-full gap-4 text-xs font-medium text-gray-700">
-              <span className={cn(imgSize, 'text-center truncate')} title={userName}>{userName}</span>
-              <div className="w-16"></div> {/* spacer for badge */}
-              <span className={cn(imgSize, 'text-center truncate')} title={celebName}>{celebName}</span>
-            </div>
+            {/* Bottom text section */}
+            <div className="p-6 space-y-4 max-h-[40%] overflow-y-auto">
+              <div className="text-center space-y-2">
+                <div className={cn("font-medium text-gray-900", percentageSize)}>
+                  {percentage}%
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  facial similarity with {celebName}
+                </p>
+              </div>
 
-            {/* tiny logo */}
-            <div className="flex items-center gap-2 mt-4">
-              <img src="/lovable-uploads/d24d594a-33ec-4302-b4c9-8235382d96ff.png"
-                   alt="logo" className="w-5 h-5 rounded" />
-              <span className="text-sm font-semibold text-gray-700">LookalikeCeleb</span>
+              {/* tiny logo */}
+              <div className="flex items-center gap-2 justify-center pt-2">
+                <img src="/logo.png"
+                     alt="logo" className="w-4 h-4 rounded opacity-60" />
+                <span className="text-xs text-gray-500 font-medium">LookalikeCeleb</span>
+              </div>
             </div>
           </div>
 
@@ -394,11 +424,15 @@ const ShareCard = ({
             <Button onClick={handleCopy} className={cn('w-full h-11 text-white rounded-lg',
               copied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-900 hover:bg-gray-800')}>
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span className="ml-2">{copied ? 'Copied!' : 'Copy image'}</span>
+              <span className="ml-2">{copied ? 'Copied Image!' : 'Copy image'}</span>
             </Button>
 
-            <Button onClick={shareTo} className={cn('w-full h-11 text-white rounded-lg', provider.btn)}>
-              {provider.icon} <span className="ml-2">Share on {provider.label}</span>
+            <Button onClick={shareTo} className={cn('w-full h-11 text-white rounded-lg', 
+              sharesCopied ? 'bg-green-600 hover:bg-green-700' : provider.btn)}>
+              {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
+              <span className="ml-2">
+                {sharesCopied ? 'Copied Image! Paste to share.' : `Share on ${provider.label}`}
+              </span>
             </Button>
 
             <Button onClick={handleDownload} variant="outline" className="w-full h-11">

@@ -93,7 +93,7 @@ For each detected match:
 - Provide a brief fact about why this celebrity is notable
 - Use professional but engaging tone
 
-CRITICAL: Return exactly 3 matches - no exceptions. Base matches on actual facial feature detection, not random selection. Return the matches as JSON and also return confidence and a short description of the match. DO NOT USE MARKDOWN, especially for descriptions. No more than 3 sentences for descriptions!`
+CRITICAL: Return exactly 3 matches - no exceptions. Base matches on actual facial feature detection, not random selection. Return the matches as JSON and also return confidence and a short description of the match. DO NOT USE MARKDOWN, especially for descriptions. No more than 1-2 sentences for descriptions!`
               }
             ]
           }
@@ -268,7 +268,6 @@ app.get('/api/base64', async (c) => {
 if (process.env.NODE_ENV === 'production') {
   // Serve static files from the React build
   app.use('/assets/*', serveStatic({ root: './dist' }));
-  app.use('/lovable-uploads/*', serveStatic({ root: './public' }));
 
   // Serve the React app for all non-API routes
   app.get('*', serveStatic({ 
@@ -276,8 +275,6 @@ if (process.env.NODE_ENV === 'production') {
     rewriteRequestPath: (path) => path === '/' ? '/index.html' : path
   }));
 } else {
-  // In development, just serve public assets and let Vite handle the rest
-  app.use('/lovable-uploads/*', serveStatic({ root: './public' }));
   
   // Simple 404 handler for development (no redirect loops)
   app.notFound((c) => {

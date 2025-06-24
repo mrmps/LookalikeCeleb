@@ -38,7 +38,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
               "group-active:scale-95"
             )}>
               <img 
-                src="/lovable-uploads/d24d594a-33ec-4302-b4c9-8235382d96ff.png" 
+                src="/logo.png" 
                 alt="LookalikeCeleb" 
                 className="w-full h-full object-cover"
               />
