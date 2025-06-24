@@ -297,8 +297,8 @@ export { routes as app };
 // Convenience bootstrap if run directly with tsx/bun/node
 if (import.meta.url === `file://${process.argv[1]}`) {
   const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
-  serve({ fetch: app.fetch, port: PORT });
-  console.log(`🚀 Hono server running on http://localhost:${PORT}`);
+  serve({ fetch: app.fetch, port: PORT, hostname: '0.0.0.0' });
+  console.log(`🚀 Hono server running on http://0.0.0.0:${PORT}`);
 }
 
 // Export the app type for RPC client

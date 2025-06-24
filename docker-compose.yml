@@ -11,4 +11,10 @@ services:
     # Load environment variables from file
     env_file:
       - .env
-    restart: unless-stopped 
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/base64?url=https://httpbin.org/json"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s 
