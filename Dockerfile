@@ -32,9 +32,12 @@ COPY --from=builder /app/package.json ./
 # Copy public assets that the server might need to serve
 COPY --from=builder /app/public ./public
 
-# Expose server port
+# Set production environment so Hono serves static files
+ENV NODE_ENV=production
 ENV PORT=3001
+
+# Expose server port
 EXPOSE 3001
 
-# Start the Hono server with tsx
-CMD ["npx", "tsx", "server/index.ts"] 
+# Start the Hono server which will serve both API and React app
+CMD ["bun", "run", "server/index.ts"] 

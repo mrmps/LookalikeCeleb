@@ -266,15 +266,25 @@ app.get('/api/base64', async (c) => {
 
 // Only serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the React build
+  // Serve static assets from the React build (JS, CSS, etc.)
   app.use('/assets/*', serveStatic({ root: './dist' }));
-
-  // Serve the React app for all non-API routes
+  
+  // Serve public assets (favicon, logo, etc.)
+  app.use('/*', serveStatic({ root: './public' }));
+  
+  // Serve the React app for all non-API routes (SPA fallback)
   app.get('*', serveStatic({ 
     root: './dist',
-    rewriteRequestPath: (path) => path === '/' ? '/index.html' : path
+    rewriteRequestPath: (path) => {
+      // Don't rewrite API routes
+      if (path.startsWith('/api/')) return path;
+      // For all other routes, serve index.html (SPA routing)
+      return '/index.html';
+    }
   }));
 } else {
+  // In development, serve public assets and let Vite handle the rest
+  app.use('/*', serveStatic({ root: './public' }));
   
   // Simple 404 handler for development (no redirect loops)
   app.notFound((c) => {
