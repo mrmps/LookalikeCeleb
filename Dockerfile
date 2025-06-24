@@ -34,10 +34,10 @@ COPY --from=builder /app/public ./public
 
 # Set production environment so Hono serves static files
 ENV NODE_ENV=production
-ENV PORT=3001
+ENV PORT=3000
 
 # Expose server port
-EXPOSE 3001
+EXPOSE 3000
 
 # Start the Hono server which will serve both API and React app
 CMD ["bun", "run", "server/index.ts"] 
