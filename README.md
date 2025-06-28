@@ -2,9 +2,9 @@
   <img src="public/og.png" alt="Screenshot of LookalikeCeleb" width="640" style="border-radius:12px;box-shadow:0 4px 24px #0002">
 </p>
 
-<h1 align="center">🎬 LookalikeCeleb</h1>
+<h1 align="center">🎬 LookalikeCeleb</h1>
 <p align="center"><strong>
-  Find your celebrity twin with AI &nbsp;•&nbsp; 100% open‑source &nbsp;•&nbsp; Powered by <a href="https://inference.net">Inference.net</a>
+  Find your celebrity twin with AI &nbsp;•&nbsp; Open source &nbsp;•&nbsp; Powered by <a href="https://inference.net">Inference.net</a>
 </strong></p>
 
 <p align="center">
@@ -15,33 +15,32 @@
 
 ---
 
-## 📸 1‑Minute Tour
+## 📸 How it works
 
-1. **Upload a selfie** (PNG / JPG or paste / camera).
-2. The server calls **Inference.net Vision + LLM** → returns structured JSON of your **top‑3 celebrity matches**.
-3. Front‑end fetches hi‑res images for each celeb → renders side‑by‑side cards with share/download buttons.
-4. No account, no storage — everything processed in memory.
-
-<br/>
-
-## 🔑 Why This Repo Rocks
-
-| Problem | How LookalikeCeleb Solves It |
-|---------|------------------------------|
-| Most look‑alike apps are black‑box 🔒 | **Transparent, structured JSON** straight from Inference.net |
-| Hard to demo a multimodal LLM quickly | <code>pnpm run dev</code> and you have a full‑stack vision demo |
-| Vision APIs return text blobs | We enforce **JSON schema** → typed data in TS + Zod |
-| Shareable results are clunky | Built‑in **share card generator** (copy, download, social links) |
-| Serverless latency issues | Runs on **Bun + Hono** (fast) • Dockerfile ready • zero vendor lock‑in |
+1. **Upload a photo** (PNG/JPG, paste, or camera)
+2. **AI analysis** via Inference.net Vision + LLM returns structured JSON with your top celebrity matches
+3. **Results display** with hi-res images, similarity scores, and shareable cards
+4. **Privacy-first** - no accounts, no storage, everything processed in memory
 
 <br/>
 
-## 🧰 Stack
+## 🔧 Features
+
+- **Transparent AI** - structured JSON responses from Inference.net, not black-box results
+- **Fast development** - full-stack multimodal demo in minutes with `pnpm run dev`
+- **Type-safe** - JSON schema enforcement with TypeScript + Zod validation
+- **Share-ready** - built-in card generator for social media (copy, download, platform links)
+- **Production-ready** - Bun + Hono backend, Docker support, no vendor lock-in
+- **Privacy-focused** - optional analytics, no data storage
+
+<br/>
+
+## 🧰 Tech Stack
 
 - **Frontend** – Vite • React 18 • shadcn/ui • TailwindCSS  
 - **Backend**  – Bun runtime • Hono router • TypeScript end‑to‑end  
-- **AI**       – [Inference.net Vision API](https://docs.inference.net/features/vision) + Structured Outputs  
-- **Deploy**   – Works on Railway, Vercel, Fly.io, or any Docker host
+- **AI**       – [Inference.net Vision API](https://docs.inference.net/features/vision) + Structured Outputs  
+- **Deploy**   – Railway, Vercel, Fly.io, or any Docker host
 
 <br/>
 
@@ -54,34 +53,68 @@ pnpm install                 # or bun install / npm i
 cp .env.example .env         # add INFERENCE_API_KEY
 pnpm run dev                 # frontend at http://localhost:5173
 bun run server:index.ts      # backend at http://localhost:3000
-````
+```
 
-> **Tip:** in dev, Vite proxy is already configured — uploads hit <code>/api</code> on port 3000.
+> **Tip:** Vite proxy is pre-configured — uploads hit `/api` on port 3000 automatically.
 
 <br/>
 
-## 🛠️  Nerd‑Level Architecture
+## 📊 Analytics (Optional)
+
+LookalikeCeleb includes optional **Plausible Analytics** for privacy-friendly tracking:
+
+```typescript
+// In App.tsx - automatically skips if env vars not set
+const plausible = Plausible({
+  domain: import.meta.env.VITE_PLAUSIBLE_DOMAIN,
+  apiHost: import.meta.env.VITE_PLAUSIBLE_HOST,
+  trackLocalhost: false, // Only tracks in production
+});
+```
+
+### Setup (Optional)
+
+Add to your `.env` file:
+```env
+VITE_PLAUSIBLE_DOMAIN=yourdomain.com
+VITE_PLAUSIBLE_HOST=https://plausible.io
+# Or use your own Plausible instance
+```
+
+### Remove Analytics
+
+Simply delete the `useEffect` block in `src/App.tsx` or leave env vars unset.
+
+> **Note:** Analytics only tracks in production (ignores localhost). No tracking = no data collected.
+
+<br/>
+
+## 🏗️ Architecture
 
 ```mermaid
 flowchart TD
-  A[Client<br/>(React)] -- upload --> B(/api/matches<br/>(Hono+Bun))
-  B -- Vision prompt --> C[Inference.net<br/>Vision + LLM]
-  C -- JSON matches --> B
-  B -- fetch img --> D[Y! / Bing Image<br/>Search Proxy]
-  B -- merged JSON --> A
+  A[Client<br>React] --> B[/api/matches<br>Hono+Bun]
+  B --> C[Inference.net<br>Vision + LLM]
+  C --> B
+  B --> D[Image Search<br>Proxy]
+  B --> A
 ```
 
-*B*: includes timeout + retry logic (handles 524s)
-*D*: lightweight proxy → base64 (avoids CORS headaches)
+**Flow:**
+- Client uploads image to Hono API
+- Server sends vision prompt to Inference.net with JSON schema
+- AI returns structured celebrity matches
+- Server fetches hi-res images via search proxy (avoids CORS)
+- Combined response sent back to client
 
 <br/>
 
-## ✨ Example Inference Request → Response
+## ✨ API Example
 
 <details>
-<summary>Click to view</summary>
+<summary>Inference.net Request → Response</summary>
 
-**Request (truncated)**
+**Request**
 
 ```jsonc
 POST https://api.inference.net/v1/chat/completions
@@ -125,7 +158,7 @@ POST https://api.inference.net/v1/chat/completions
   "matches": [
     { "name":"Emma Stone","percentage":94,
       "description":"Wide-set green eyes, pronounced cheekbones…" },
-    { "name":"Ryan Gosling","percentage":87,
+    { "name":"Ryan Gosling","percentage":87,
       "description":"Similar jawline, nose bridge, blue eyes…" },
     { "name":"Zendaya","percentage":82,
       "description":"Matching eyebrow arch, chin profile…" }
@@ -137,30 +170,38 @@ POST https://api.inference.net/v1/chat/completions
 
 <br/>
 
-## 🌐 1‑Click Deploy
+## 🚀 Deploy
 
-| Platform | Button                                                                                                                                          |
+| Platform | Instructions                                                                                                                                          |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Railway  | [![Deploy to Railway](https://railway.app/button.svg)](https://railway.com?referralCode=hKysZG) |
 | Docker   | `docker build -t lookalikeceleb . && docker run -p 3000:3000 --env-file .env lookalikeceleb`    |
 
-Set `INFERENCE_API_KEY` wherever you deploy.
+Set `INFERENCE_API_KEY` in your environment variables.
 
 <br/>
 
 ## 🤝 Contributing
 
-1. Fork + star ⭐ (optional but awesome)
-2. `git checkout -b my-feature`
-3. Commit + PR — we love community ideas (new share templates? dark‑mode face guide? throw it in!)
+We welcome contributions! Ideas for improvements:
+
+- New share card templates
+- Additional AI providers
+- Performance optimizations  
+- Dark mode
+- Mobile app version
+
+1. Fork this repo
+2. Create a feature branch: `git checkout -b my-feature`
+3. Commit your changes and open a PR
 
 <br/>
 
 ## 📜 License
 
-[MIT](LICENSE)
+[MIT](LICENSE) - feel free to use this in your own projects.
 
 ---
 
-> **Built with love for demos, and showing what multimodal LLMs can do.
-> If you launch something with this, ping me — I’d love to see it!**
+> **A practical demo of multimodal AI for the open source community.  
+> Built to show what's possible with modern vision models.**
