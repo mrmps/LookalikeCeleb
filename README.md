@@ -93,10 +93,10 @@ Simply delete the `useEffect` block in `src/App.tsx` or leave env vars unset.
 
 ```mermaid
 flowchart TD
-  A[Client<br>React] --> B[/api/matches<br>Hono+Bun]
-  B --> C[Inference.net<br>Vision + LLM]
+  A[Client React] --> B[API Matches Hono+Bun]
+  B --> C[Inference.net Vision LLM]
   C --> B
-  B --> D[Image Search<br>Proxy]
+  B --> D[Image Search Proxy]
   B --> A
 ```
 
