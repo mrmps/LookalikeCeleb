@@ -21,7 +21,7 @@ const App = () => {
     const plausible = Plausible({
       domain,
       apiHost,
-      trackLocalhost: true,
+      trackLocalhost: false,
     });
 
     plausible.enableAutoPageviews();
