@@ -13,8 +13,14 @@ const queryClient = new QueryClient();
 const App = () => {
   // Initialize Plausible Analytics
   useEffect(() => {
-    const domain = 'lookalikeceleb.com';
-    const apiHost = 'https://plausible-analytics-ce-production-3ef2.up.railway.app';
+    console.log('Plausible Analytics: Initializing');
+    const domain = import.meta.env.VITE_PLAUSIBLE_DOMAIN;
+    const apiHost = import.meta.env.VITE_PLAUSIBLE_HOST;
+    
+    if (!domain || !apiHost) {
+      console.log('Plausible Analytics: Environment variables not set, skipping analytics');
+      return;
+    }
 
     console.log('Plausible Analytics: Initializing for domain:', domain);
 
