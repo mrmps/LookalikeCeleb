@@ -10,8 +10,8 @@
 <p align="center">
   <a href="https://lookalikeceleb.com"><img alt="Live demo badge" src="https://img.shields.io/badge/Demo-lookalikeceleb.com-4F46E5?logo=vercel"></a>
   <a href="https://docs.inference.net/features/vision"><img alt="Powered by Inference.net" src="https://img.shields.io/badge/Vision%20API-Inference.net-E879F9"></a>
-  <img alt="Repo size" src="https://img.shields.io/github/repo-size/yourrepo/lookalikeceleb?color=success">
-  <img alt="License" src="https://img.shields.io/github/license/yourrepo/lookalikeceleb">
+  <img alt="Repo size" src="https://img.shields.io/github/repo-size/mrmps/lookalikeceleb?color=success">
+  <img alt="License" src="https://img.shields.io/github/license/mrmps/lookalikeceleb">
 </p>
 
 ---
