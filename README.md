@@ -141,9 +141,8 @@ POST https://api.inference.net/v1/chat/completions
 
 | Platform | Button                                                                                                                                          |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Railway  | [![Deploy to Railway](https://railway.app/button.svg)](https://railway.app/new/template?templateUrl=https://github.com/yourrepo/lookalikeceleb) |
-| Vercel   | `vercel --prod` works out‑of‑the‑box                                                                                                            |
-| Docker   | `docker build -t lookalikeceleb . && docker run -p 3000:3000 lookalikeceleb`                                                                    |
+| Railway  | [![Deploy to Railway](https://railway.app/button.svg)](https://railway.com?referralCode=hKysZG) |
+| Docker   | `docker build -t lookalikeceleb . && docker run -p 3000:3000 --env-file .env lookalikeceleb`    |
 
 Set `INFERENCE_API_KEY` wherever you deploy.
 
