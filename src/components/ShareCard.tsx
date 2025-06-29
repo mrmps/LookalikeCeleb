@@ -545,8 +545,8 @@ const ShareCard = ({
 
   return (
     <Wrapper open={open} onOpenChange={onOpenChange}>
-      {isMobile && <DrawerHeader className="sr-only" />}
       <WrapperContent className={cn('focus:outline-none max-h-[90vh]', !isMobile && 'sm:max-w-md p-0')}>
+        {isMobile && <DrawerHeader className="sr-only" />}
         {/* CONTROLS */}
         <div className="space-y-6 p-6 max-h-[80vh] overflow-y-auto">
           {/* provider select */}
