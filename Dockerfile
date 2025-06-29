@@ -1,12 +1,12 @@
-# ─────────────── 1) Dependencies stage ───────────────
+# ─────────────── 1) Dependencies stage ───────────────
 FROM oven/bun:1.1 AS deps
 WORKDIR /app
 
-# Copy lock-files first so "bun install" is cached unless deps change
+# Copy lock‑files first so “bun install” is cached unless deps change
 COPY bun.lockb package*.json ./
 RUN bun install --production --no-save
 
-# ─────────────── 2) Build stage ───────────────
+# ─────────────── 2) Build stage ───────────────
 FROM deps AS builder
 # Bring in the full source
 COPY . .
@@ -14,18 +14,18 @@ COPY . .
 # Build the React client → ./dist
 RUN bun run build
 
-# Compile server TypeScript once (quicker cold-starts)
+# Compile server TypeScript once (quicker cold‑starts)
 RUN bunx tsc --project tsconfig.json --outDir ./.build
 
-# ─────────────── 3) Runtime stage ───────────────
+# ─────────────── 3) Runtime stage ───────────────
 FROM oven/bun:1.1-slim AS runner
 WORKDIR /app
 
-# Copy production deps and built artifacts only
+# Copy production deps and built artefacts only
 COPY --from=deps    /app/node_modules           ./node_modules
-COPY --from=builder /app/dist                   ./dist
-COPY --from=builder /app/.build/server          ./server
-COPY --from=builder /app/public                 ./public
+COPY --from=builder /app/dist                  ./dist
+COPY --from=builder /app/.build/server         ./server
+COPY --from=builder /app/public                ./public
 COPY package.json .
 
 # Run as an unprivileged UID
@@ -37,8 +37,7 @@ ENV NODE_ENV=production
 ENV PORT=3001
 EXPOSE 3001
 
-# Note: bun:slim images don't include curl, so use a simpler health check
 HEALTHCHECK --interval=30s --timeout=3s CMD \
-  bun -e "fetch('http://localhost:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+  curl -f http://localhost:$PORT/health || exit 1
 
 CMD ["bun", "run", "server/index.js"]
