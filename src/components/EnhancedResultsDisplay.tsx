@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
 import { ensureSafeImage } from '@/lib/utils';
+import { SafeImg } from '@/components/ui/SafeImg';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
@@ -97,7 +98,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
             
             {/* Celebrity Photo - Right Side */}
             <div className="flex-1 relative bg-gray-100">
-              <img 
+              <SafeImg 
                 src={selectedMatch.image} 
                 alt={selectedMatch.name}
                 className="w-full h-full object-cover"
@@ -166,7 +167,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                   <div className="flex items-center gap-4">
                     {/* Celebrity Image */}
                     <div className="relative">
-                      <img 
+                      <SafeImg 
                         src={celebrity.image} 
                         alt={celebrity.name}
                         className="w-14 h-14 rounded-xl object-cover border border-gray-200"

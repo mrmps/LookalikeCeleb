@@ -3,6 +3,7 @@ import React from 'react';
 import { Star, RotateCcw, Share2, Trophy, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { SafeImg } from '@/components/ui/SafeImg';
 
 interface ResultsDisplayProps {
   uploadedImage: string;
@@ -67,7 +68,7 @@ const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ uploadedImage, onReset 
           <Card key={celebrity.name} className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 active:scale-[0.98] transition-transform">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <img 
+                <SafeImg 
                   src={celebrity.image} 
                   alt={celebrity.name}
                   className="w-16 h-16 rounded-2xl object-cover border-2 border-gray-100"

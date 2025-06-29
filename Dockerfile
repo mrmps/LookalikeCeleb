@@ -18,9 +18,6 @@ RUN bun run build
 FROM oven/bun:1.1-slim AS runner
 WORKDIR /app
 
-# Install Node.js for @hono/node-server
-# RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
-
 # Copy built frontend
 COPY --from=builder /app/dist ./dist
 
