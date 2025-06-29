@@ -77,7 +77,6 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                 src={uploadedImage} 
                 alt="Your photo" 
                 className="w-full h-full object-cover"
-                crossOrigin="anonymous"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                 <div className="p-3">
@@ -102,7 +101,6 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                 src={selectedMatch.image} 
                 alt={selectedMatch.name}
                 className="w-full h-full object-cover"
-                crossOrigin="anonymous"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                 <div className="p-3">
@@ -171,7 +169,6 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                         src={celebrity.image} 
                         alt={celebrity.name}
                         className="w-14 h-14 rounded-xl object-cover border border-gray-200"
-                        crossOrigin="anonymous"
                       />
                       {index === 0 && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center">

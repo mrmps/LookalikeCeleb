@@ -4,7 +4,7 @@ import React, {
 } from 'react';
 import {
   Download, Copy, Check, Instagram, Facebook, Twitter,
-  Linkedin, Sparkles,
+  Linkedin, Sparkles, Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -238,6 +238,61 @@ const ShareCard = ({
     }
   }, [provider, userImage, celebrityImage]);
 
+  /* NEW: Primary mobile share function using Web Share API */
+  const handleNativeShare = async () => {
+    try {
+      const dataUrl = await makeImage();
+      if (!dataUrl) {
+        alert('Failed to generate image. Please try again.');
+        return;
+      }
+      
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `twin-${celebName.replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+      
+      // Check if Web Share API supports files
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          text: shareText,
+          title: `My celebrity twin: ${celebName}!`
+        });
+        return;
+      }
+      
+      // Fallback to download for mobile
+      if (isMobile) {
+        const a = document.createElement('a');
+        a.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
+        a.href = dataUrl;
+        a.click();
+        return;
+      }
+      
+      // Desktop fallback: copy to clipboard
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      
+    } catch (error) {
+      console.error('Native share failed:', error);
+      // Final fallback: trigger download
+      try {
+        const dataUrl = await makeImage();
+        if (dataUrl) {
+          const a = document.createElement('a');
+          a.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
+          a.href = dataUrl;
+          a.click();
+        }
+      } catch (downloadError) {
+        console.error('Download fallback failed:', downloadError);
+        alert('Failed to share or save image. Please try again.');
+      }
+    }
+  };
+
   const handleDownload = async () => {
     try {
       const dataUrl = await makeImage();
@@ -273,7 +328,7 @@ const ShareCard = ({
     }
   };
 
-  /* 2 ▸ provider‑specific share link */
+  /* 2 ▸ provider‑specific share link (for social platforms) */
   const shareTo = async () => {
     try {
       // First copy the image to clipboard
@@ -436,47 +491,97 @@ const ShareCard = ({
             </div>
           </div>
 
-
-
           {/* ACTION BUTTONS */}
           <div className="space-y-3">
+            {/* PRIMARY SHARE BUTTON */}
             <Button 
-              onClick={handleCopy} 
+              onClick={handleNativeShare} 
               disabled={isConverting}
               className={cn('w-full h-11 text-white rounded-lg',
                 copied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-900 hover:bg-gray-800')}
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span className="ml-2">
-                {isConverting ? 'Converting images...' : copied ? 'Copied Image!' : 'Copy image'}
-              </span>
-            </Button>
-
-            <Button 
-              onClick={shareTo} 
-              disabled={isConverting}
-              className={cn('w-full h-11 text-white rounded-lg', 
-                sharesCopied ? 'bg-green-600 hover:bg-green-700' : provider.btn)}
-            >
-              {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
+              {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
               <span className="ml-2">
                 {isConverting ? 'Converting images...' : 
-                 sharesCopied ? 'Copied Image! Paste to share.' : `Share on ${provider.label}`}
+                 copied ? 'Copied Image!' : 
+                 isMobile ? 'Share Result' : 'Share Image'}
               </span>
             </Button>
 
-            <Button 
-              onClick={handleDownload} 
-              disabled={isConverting}
-              variant="outline" 
-              className="w-full h-11"
-            >
-              <Download className="w-4 h-4" /> 
-              <span className="ml-2">
-                {isConverting ? 'Converting images...' : 'Save image'}
-              </span>
-            </Button>
+            {/* DESKTOP: Keep platform-specific sharing */}
+            {!isMobile && (
+              <Button 
+                onClick={shareTo} 
+                disabled={isConverting}
+                className={cn('w-full h-11 text-white rounded-lg', 
+                  sharesCopied ? 'bg-green-600 hover:bg-green-700' : provider.btn)}
+              >
+                {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
+                <span className="ml-2">
+                  {isConverting ? 'Converting images...' : 
+                   sharesCopied ? 'Copied Image! Paste to share.' : `Share on ${provider.label}`}
+                </span>
+              </Button>
+            )}
+
+            {/* SECONDARY ACTIONS */}
+            <div className={cn('space-y-3', isMobile ? 'pt-2' : '')}>
+              {/* Save/Download - Always available */}
+              <Button 
+                onClick={handleDownload} 
+                disabled={isConverting}
+                variant="outline" 
+                className="w-full h-11"
+              >
+                <Download className="w-4 h-4" /> 
+                <span className="ml-2">
+                  {isConverting ? 'Converting images...' : 
+                   isMobile ? 'Save to Photos' : 'Save Image'}
+                </span>
+              </Button>
+
+              {/* Copy - Desktop prominent, mobile hidden/de-emphasized */}
+              {!isMobile && (
+                <Button 
+                  onClick={handleCopy} 
+                  disabled={isConverting}
+                  variant="outline"
+                  className="w-full h-11"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span className="ml-2">
+                    {isConverting ? 'Converting images...' : copied ? 'Copied!' : 'Copy Image'}
+                  </span>
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* MOBILE: Platform sharing as secondary option */}
+          {isMobile && (
+            <div className="pt-4 border-t border-gray-200">
+              <Label className="text-xs text-gray-500 mb-3 block">Or share to specific platform:</Label>
+              <Button 
+                onClick={shareTo} 
+                disabled={isConverting}
+                variant="outline"
+                className="w-full h-10 text-sm"
+              >
+                {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
+                <span className="ml-2">
+                  {isConverting ? 'Converting...' : 
+                   sharesCopied ? 'Copied! Paste to share.' : `Open ${provider.label}`}
+                </span>
+              </Button>
+            </div>
+          )}
+
+          {/* Helper text for mobile */}
+          {isMobile && (
+            <p className="text-xs text-gray-500 text-center leading-relaxed pt-2">
+              "Share Result" opens your phone's native share menu with all your apps
+            </p>
+          )}
         </div>
       </WrapperContent>
     </Wrapper>
