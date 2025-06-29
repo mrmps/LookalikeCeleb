@@ -35,3 +35,13 @@ export const ensureSafeImage = async (src: string): Promise<string> => {
     return src;
   }
 };
+
+// Feature detection for clipboard image support
+export const canWriteImageToClipboard = (): boolean => {
+  return (
+    typeof navigator !== 'undefined' &&
+    !!navigator.clipboard &&
+    !!navigator.clipboard.write &&
+    typeof ClipboardItem !== 'undefined'
+  );
+};

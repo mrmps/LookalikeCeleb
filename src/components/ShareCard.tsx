@@ -14,7 +14,7 @@ import { Drawer, DrawerContent, DrawerHeader } from '@/components/ui/drawer';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
 import * as htmlToImage from 'html-to-image';           // <–– NEW (handles CORS, font embedding, @2x etc.)
-import { cn, ensureSafeImage } from '@/lib/utils';
+import { cn, ensureSafeImage, canWriteImageToClipboard } from '@/lib/utils';
 
 /*–––––––––––––––––––––––––  CONSTANTS  –––––––––––––––––––––––*/
 
@@ -307,10 +307,20 @@ const ShareCard = ({
         return;
       }
       
-      // Desktop fallback: copy to clipboard
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Desktop fallback: copy to clipboard if supported
+      if (canWriteImageToClipboard()) {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        // If clipboard not supported, download instead
+        const a = document.createElement('a');
+        a.download = file.name;
+        a.href = dataUrl;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
       
     } catch (error) {
       console.error('Native share failed:', error);
@@ -355,6 +365,11 @@ const ShareCard = ({
 
   const handleCopy = async () => {
     try {
+      if (!canWriteImageToClipboard()) {
+        alert('Clipboard not supported on this device. Please use download instead.');
+        return;
+      }
+      
       const dataUrl = await makeImage();
       if (!dataUrl) {
         alert('Failed to generate image. Please try again.');
@@ -443,14 +458,31 @@ const ShareCard = ({
         }
         
       } else {
-        // PASTE METHOD: Copy to clipboard  
-        try {
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          setSharesCopied(true);
-          setTimeout(() => setSharesCopied(false), 2000);
-        } catch (clipboardError) {
-          console.error('Clipboard copy failed:', clipboardError);
-          // Fallback to download if clipboard fails
+        // PASTE METHOD: Copy to clipboard if supported
+        if (canWriteImageToClipboard()) {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            setSharesCopied(true);
+            setTimeout(() => setSharesCopied(false), 2000);
+          } catch (clipboardError) {
+            console.error('Clipboard copy failed:', clipboardError);
+            // Fallback to download if clipboard fails
+            const downloadLink = document.createElement('a');
+            downloadLink.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
+            downloadLink.href = dataUrl;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            if (isMobile) {
+              alert('Clipboard access denied. Image downloaded instead - you can upload it manually.');
+            } else {
+              alert('Failed to copy to clipboard. Image downloaded instead.');
+            }
+            return;
+          }
+        } else {
+          // Clipboard not supported, download instead
           const downloadLink = document.createElement('a');
           downloadLink.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
           downloadLink.href = dataUrl;
@@ -458,10 +490,13 @@ const ShareCard = ({
           downloadLink.click();
           document.body.removeChild(downloadLink);
           
+          setSharesCopied(true);
+          setTimeout(() => setSharesCopied(false), 3000);
+          
           if (isMobile) {
-            alert('Clipboard access denied. Image downloaded instead - you can upload it manually.');
+            alert('Image saved to downloads. You can upload it manually to the platform.');
           } else {
-            alert('Failed to copy to clipboard. Image downloaded instead.');
+            alert('Clipboard not supported. Image downloaded instead.');
           }
           return;
         }
@@ -692,11 +727,15 @@ const ShareCard = ({
                    sharesCopied ? (
                      ((providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest')) 
                        ? 'Image Saved! Check downloads.' 
-                       : 'Copied! Paste to share.'
+                       : canWriteImageToClipboard() 
+                         ? 'Copied! Paste to share.'
+                         : 'Image Saved! Upload manually.'
                    ) : 
                    ((providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest'))
                      ? `Save & Open ${provider.label}`
-                     : `Copy & Open ${provider.label}`}
+                     : canWriteImageToClipboard()
+                       ? `Copy & Open ${provider.label}`
+                       : `Save & Open ${provider.label}`}
                 </span>
               </Button>
             )}
@@ -717,8 +756,8 @@ const ShareCard = ({
                 </span>
               </Button>
 
-              {/* Copy - Desktop prominent, mobile hidden/de-emphasized */}
-              {!isMobile && (
+              {/* Copy - Only show when clipboard is supported */}
+              {!isMobile && canWriteImageToClipboard() && (
                 <Button 
                   onClick={handleCopy} 
                   disabled={isConverting}
@@ -749,13 +788,17 @@ const ShareCard = ({
                   {isConverting ? 'Converting...' : 
                    ((providerKey === 'instagram') || (providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest'))
                      ? `Save & Open ${provider.label}`
-                     : `Copy & Open ${provider.label}`}
+                     : canWriteImageToClipboard()
+                       ? `Copy & Open ${provider.label}`
+                       : `Save & Open ${provider.label}`}
                 </span>
               </Button>
               <p className="text-xs text-gray-400 text-center mt-2">
                 {((providerKey === 'instagram') || (providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest'))
                   ? 'Saves image to photos then opens app'
-                  : 'Copies image to clipboard then opens app'}
+                  : canWriteImageToClipboard()
+                    ? 'Copies image to clipboard then opens app'
+                    : 'Saves image to photos then opens app'}
               </p>
             </div>
           )}
