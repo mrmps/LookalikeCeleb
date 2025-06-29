@@ -247,12 +247,16 @@ const ShareCard = ({
         return;
       }
       
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      const file = new File([blob], `twin-${celebName.replace(/\s+/g, '-')}.png`, { type: 'image/png' });
+      // Convert dataUrl to blob and create proper File object
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File(
+        [blob],
+        `twin-${celebName.replace(/\s+/g, '-')}.png`,
+        { type: 'image/png' }
+      );
       
       // Check if Web Share API supports files
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           files: [file],
           text: shareText,
@@ -261,12 +265,14 @@ const ShareCard = ({
         return;
       }
       
-      // Fallback to download for mobile
+      // Fallback to download for mobile if Web Share API doesn't support files
       if (isMobile) {
         const a = document.createElement('a');
-        a.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
+        a.download = file.name;
         a.href = dataUrl;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         return;
       }
       
@@ -284,7 +290,11 @@ const ShareCard = ({
           const a = document.createElement('a');
           a.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
           a.href = dataUrl;
+          document.body.appendChild(a);
           a.click();
+          document.body.removeChild(a);
+        } else {
+          throw new Error('Could not generate image');
         }
       } catch (downloadError) {
         console.error('Download fallback failed:', downloadError);
@@ -303,7 +313,9 @@ const ShareCard = ({
       const a = document.createElement('a');
       a.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
       a.href = dataUrl;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Download failed:', error);
       alert('Failed to download image. Please try again.');
@@ -328,24 +340,37 @@ const ShareCard = ({
     }
   };
 
-  /* 2 ▸ provider‑specific share link (for social platforms) */
+  /* 2 ▸ provider‑specific share link - MOBILE: Use Web Share API, DESKTOP: Copy + open */
   const shareTo = async () => {
     try {
-      // First copy the image to clipboard
       const dataUrl = await makeImage();
       if (!dataUrl) {
         alert('Failed to generate image. Please try again.');
         return;
       }
       
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], `twin-${celebName.replace(/\s+/g, '-')}.png`, { type: 'image/png' });
       
+      /*
+       * MOBILE: fall back to the system share sheet.
+       * DESKTOP: keep the clipboard‑copy + new‑tab behaviour.
+       */
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          text: shareText,
+          title: `My celebrity twin: ${celebName}!`
+        });
+        return; // we're done – no need to open provider URL
+      }
+      
+      // Desktop fallback (old behaviour)
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       setSharesCopied(true);
       setTimeout(() => setSharesCopied(false), 2000);
       
-      // Then open platform if it has a share URL
+      // Then open platform
       const u = encodeURIComponent(origin);
       const t = encodeURIComponent(shareText);
       const links: Record<ProviderKey, string> = {
@@ -359,13 +384,13 @@ const ShareCard = ({
       };
       
       const link = links[providerKey];
-      // Wait a bit longer to show the copied state before opening
+      // Wait a bit to show the copied state before opening
       setTimeout(() => {
         window.open(link, '_blank', 'width=600,height=500');
       }, 1500);
     } catch (error) {
-      console.error('Failed to copy image to clipboard:', error);
-      alert('Failed to copy image to clipboard');
+      console.error('Failed to share:', error);
+      alert('Failed to share image. Please try again.');
     }
   };
 
@@ -567,12 +592,14 @@ const ShareCard = ({
                 variant="outline"
                 className="w-full h-10 text-sm"
               >
-                {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
+                {provider.icon} 
                 <span className="ml-2">
-                  {isConverting ? 'Converting...' : 
-                   sharesCopied ? 'Copied! Paste to share.' : `Open ${provider.label}`}
+                  {isConverting ? 'Converting...' : `Share to ${provider.label}`}
                 </span>
               </Button>
+              <p className="text-xs text-gray-400 text-center mt-2">
+                Opens native share sheet with image attached
+              </p>
             </div>
           )}
 
