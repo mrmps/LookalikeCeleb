@@ -1,43 +1,44 @@
-# ---- Build stage ----
-FROM oven/bun:1.1 AS builder
+# ─────────────── 1) Dependencies stage ───────────────
+FROM oven/bun:1.1 AS deps
 WORKDIR /app
 
-# Copy package files first for better layer caching
-COPY package*.json bun.lockb ./
+# Copy lock-files first so "bun install" is cached unless deps change
+COPY bun.lockb package*.json ./
+RUN bun install --production --no-save
 
-# Install dependencies (remove --frozen-lockfile to allow lockfile updates)
-RUN bun install
-
-# Copy project files
+# ─────────────── 2) Build stage ───────────────
+FROM deps AS builder
+# Bring in the full source
 COPY . .
 
-# Build the React client (outputs to ./dist)
+# Build the React client → ./dist
 RUN bun run build
 
-# ---- Production stage ----
+# Compile server TypeScript once (quicker cold-starts)
+RUN bunx tsc --project tsconfig.json --outDir ./.build
+
+# ─────────────── 3) Runtime stage ───────────────
 FROM oven/bun:1.1-slim AS runner
 WORKDIR /app
 
-# Install Node.js for @hono/node-server
-RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
+# Copy production deps and built artifacts only
+COPY --from=deps    /app/node_modules           ./node_modules
+COPY --from=builder /app/dist                   ./dist
+COPY --from=builder /app/.build/server          ./server
+COPY --from=builder /app/public                 ./public
+COPY package.json .
 
-# Copy built frontend
-COPY --from=builder /app/dist ./dist
+# Run as an unprivileged UID
+RUN adduser --system --uid 1001 appuser && \
+    chown -R appuser:appuser /app
+USER appuser
 
-# Copy server files and dependencies
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/server ./server
-COPY --from=builder /app/package.json ./
-
-# Copy public assets that the server might need to serve
-COPY --from=builder /app/public ./public
-
-# Set production environment so Hono serves static files
 ENV NODE_ENV=production
-# Don't set PORT - let Railway set it
-
-# Expose server port (default, can be overridden by environment)
+ENV PORT=3001
 EXPOSE 3001
 
-# Start the Hono server which will serve both API and React app
-CMD ["bun", "run", "server/index.ts"] 
+# Note: bun:slim images don't include curl, so use a simpler health check
+HEALTHCHECK --interval=30s --timeout=3s CMD \
+  bun -e "fetch('http://localhost:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+
+CMD ["bun", "run", "server/index.js"]
