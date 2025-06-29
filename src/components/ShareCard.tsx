@@ -169,6 +169,7 @@ const ShareCard = ({
       
       // First capture at natural size with exact bounds
       const naturalDataUrl = await htmlToImage.toPng(element, {
+        
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
@@ -235,7 +236,7 @@ const ShareCard = ({
       
       return undefined;
     }
-  }, [provider]);
+  }, [provider, userImage, celebrityImage]);
 
   const handleDownload = async () => {
     try {

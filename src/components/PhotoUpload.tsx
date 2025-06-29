@@ -114,27 +114,50 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
         throw new Error('Camera not supported on this browser');
       }
 
-      // Attempt to get user-facing camera first, fallback to any camera
-      const constraintsPrimary: MediaStreamConstraints = {
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      };
-      const constraintsFallback: MediaStreamConstraints = {
-        video: true,
-        audio: false
+      // iOS Safari-friendly front camera selection
+      const getStream = async () => {
+        try {
+          // First, get any camera to populate device labels
+          const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          
+          // Look for front-facing camera
+          const frontCamera = devices.find(
+            (device) =>
+              device.kind === "videoinput" &&
+              /front|user|facetime/i.test(device.label)
+          );
+
+          // Stop temporary stream
+          tempStream.getTracks().forEach((track) => track.stop());
+
+          // Use specific front camera if found, otherwise fallback
+          const constraints: MediaStreamConstraints = frontCamera
+            ? {
+                video: {
+                  deviceId: { exact: frontCamera.deviceId },
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                },
+                audio: false,
+              }
+            : {
+                video: { facingMode: { exact: "user" } },
+                audio: false,
+              };
+
+          return navigator.mediaDevices.getUserMedia(constraints);
+        } catch (error) {
+          // Final fallback for older browsers or permission issues
+          console.warn('Device enumeration failed, using basic constraints:', error);
+          return navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: false
+          });
+        }
       };
 
-      let mediaStream: MediaStream;
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia(constraintsPrimary);
-      } catch (err) {
-        console.warn('Primary camera constraints failed, trying fallback:', err);
-        mediaStream = await navigator.mediaDevices.getUserMedia(constraintsFallback);
-      }
+      const mediaStream = await getStream();
 
       // Save stream and open camera overlay. Actual binding to video element
       // will happen in a separate useEffect once the overlay (and <video>) is mounted.
@@ -271,7 +294,7 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
             autoPlay
             playsInline
             muted
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transform -scale-x-100"
           />
           
           {/* Face Guide Overlay */}
