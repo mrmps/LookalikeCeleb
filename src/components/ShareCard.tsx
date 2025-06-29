@@ -87,8 +87,36 @@ const ShareCard = ({
 
   /*–––––––––––––  HELPERS  –––––––––––––*/
 
-  const shareText = `You and ${celebName}? ${percentage}% twin!`;
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  // Platform-specific share text (URL handled separately by platform)
+  const shareText = useMemo(() => {
+    switch (providerKey) {
+      case 'instagram':
+        return `wait I'm ${percentage}% similar to ${celebName} 😭\n\nthis app is actually crazy`;
+        
+      case 'twitter':
+        return `No way... I'm ${percentage}% similar to ${celebName} 🤯\n\nTried this AI app and I'm shook 💀`;
+        
+      case 'facebook':
+        return `lol just tried this app and apparently I'm ${percentage}% similar to ${celebName}\n\nkinda scared how accurate this is 😅`;
+        
+      case 'linkedin':
+        return `Tested an AI facial similarity app - ${percentage}% match with ${celebName}. Interesting to see how these algorithms work.`;
+        
+      case 'tiktok':
+        return `POV: you're ${percentage}% similar to ${celebName} 💀\n\nthis app is actually insane`;
+        
+      case 'snapchat':
+        return `BRUH I'm ${percentage}% similar to ${celebName} 😭\n\nthis app is wild`;
+        
+      case 'pinterest':
+        return `I'm ${percentage}% similar to ${celebName}! Check out this AI celebrity lookalike app`;
+        
+      default:
+        return `I tried this app and my twin is ${celebName}!\n${percentage}% similarity is crazy!`;
+    }
+  }, [providerKey, celebName, percentage]);
+  
+  const origin = 'https://lookalikeceleb.com';
 
   const cardClass = useMemo(() => (
     provider.ratio === '9/16' ? 'aspect-[9/16] w-full max-w-xs'
@@ -257,14 +285,17 @@ const ShareCard = ({
       
       // Check if Web Share API supports files
       if (navigator.canShare?.({ files: [file] })) {
+        console.log('Sharing text:', JSON.stringify(shareText));
+        console.log('Share text length:', shareText.length);
+        console.log('Share text char codes:', [...shareText].map(c => c.charCodeAt(0)).slice(0, 20));
         await navigator.share({
-          files: [file],
-          text: shareText,
-          title: `My celebrity twin: ${celebName}!`
+          title: `no way`,
+          text: shareText,   // can still contain the double \\n if you like
+          files: [file]
         });
+        
         return;
       }
-      
       // Fallback to download for mobile if Web Share API doesn't support files
       if (isMobile) {
         const a = document.createElement('a');
@@ -340,7 +371,7 @@ const ShareCard = ({
     }
   };
 
-  /* 2 ▸ provider‑specific share link - MOBILE: Use Web Share API, DESKTOP: Copy + open */
+  /* 2 ▸ Platform-specific sharing matrix: PASTE vs DOWNLOAD */
   const shareTo = async () => {
     try {
       const dataUrl = await makeImage();
@@ -350,47 +381,161 @@ const ShareCard = ({
       }
       
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], `twin-${celebName.replace(/\s+/g, '-')}.png`, { type: 'image/png' });
       
-      /*
-       * MOBILE: fall back to the system share sheet.
-       * DESKTOP: keep the clipboard‑copy + new‑tab behaviour.
-       */
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          text: shareText,
-          title: `My celebrity twin: ${celebName}!`
-        });
-        return; // we're done – no need to open provider URL
-      }
-      
-      // Desktop fallback (old behaviour)
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      setSharesCopied(true);
-      setTimeout(() => setSharesCopied(false), 2000);
-      
-      // Then open platform
+      // Prepare URLs
       const u = encodeURIComponent(origin);
       const t = encodeURIComponent(shareText);
-      const links: Record<ProviderKey, string> = {
-        instagram: 'https://www.instagram.com',
-        snapchat: 'https://web.snapchat.com',
-        twitter: `https://twitter.com/intent/tweet?text=${t}&url=${u}`,
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
-        tiktok: 'https://www.tiktok.com',
-        pinterest: `https://pinterest.com/pin/create/button/?url=${u}&description=${t}`,
+      
+      /*
+       * PLATFORM x DEVICE MATRIX:
+       * 
+       * PASTE-FRIENDLY (copy to clipboard):
+       * ✅ Instagram Desktop - can paste in browser
+       * ✅ Twitter Desktop & Mobile - supports paste
+       * ✅ Facebook Desktop & Mobile - supports paste  
+       * ✅ LinkedIn Desktop & Mobile - supports paste
+       * 
+       * DOWNLOAD-REQUIRED (save to device):
+       * 💾 Instagram Mobile - app needs files
+       * 💾 Snapchat Desktop & Mobile - limited web, app needs files
+       * 💾 TikTok Desktop & Mobile - video platform, needs saved media
+       * 💾 Pinterest Desktop & Mobile - better UX with saved images
+       */
+      
+      const needsDownload = (
+        (providerKey === 'instagram' && isMobile) ||
+        (providerKey === 'snapchat') ||
+        (providerKey === 'tiktok') ||
+        (providerKey === 'pinterest')
+      );
+      
+      if (needsDownload) {
+        // DOWNLOAD METHOD: Save image to device
+        const file = new File([blob], `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`, { type: 'image/png' });
+        
+        const downloadLink = document.createElement('a');
+        downloadLink.download = file.name;
+        downloadLink.href = dataUrl;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        setSharesCopied(true);
+        setTimeout(() => setSharesCopied(false), 3000);
+        
+        // Show platform-specific instruction
+        let instruction = '';
+        if (providerKey === 'instagram' && isMobile) {
+          instruction = 'Image saved! Open Instagram app → Create post → Select from gallery';
+        } else if (providerKey === 'snapchat') {
+          instruction = 'Image saved! Open Snapchat → Memories → Camera Roll → Share';
+        } else if (providerKey === 'tiktok') {
+          instruction = 'Image saved! Open TikTok → Create → Upload → Add to video';
+        } else if (providerKey === 'pinterest') {
+          instruction = 'Image saved! Open Pinterest → Create Pin → Upload image';
+        }
+        
+        if (instruction) {
+          // Show instruction briefly
+          setTimeout(() => {
+            alert(instruction);
+          }, 500);
+        }
+        
+      } else {
+        // PASTE METHOD: Copy to clipboard  
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          setSharesCopied(true);
+          setTimeout(() => setSharesCopied(false), 2000);
+        } catch (clipboardError) {
+          console.error('Clipboard copy failed:', clipboardError);
+          // Fallback to download if clipboard fails
+          const downloadLink = document.createElement('a');
+          downloadLink.download = `twin-${celebName.replace(/\s+/g, '-')}-${providerKey}.png`;
+          downloadLink.href = dataUrl;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          
+          if (isMobile) {
+            alert('Clipboard access denied. Image downloaded instead - you can upload it manually.');
+          } else {
+            alert('Failed to copy to clipboard. Image downloaded instead.');
+          }
+          return;
+        }
+      }
+      
+      // Platform URLs
+      const platformLinks = {
+        instagram: {
+          mobile: 'instagram://app',
+          desktop: 'https://www.instagram.com'
+        },
+        twitter: {
+          mobile: `twitter://post?message=${t}`,
+          desktop: `https://twitter.com/intent/tweet?text=${t}&url=${u}`
+        },
+        facebook: {
+          mobile: 'fb://composer',
+          desktop: `https://www.facebook.com/`
+        },
+        linkedin: {
+          mobile: 'linkedin://compose',
+          desktop: 'https://www.linkedin.com/feed/'
+        },
+        snapchat: {
+          mobile: 'snapchat://',
+          desktop: 'https://web.snapchat.com'
+        },
+        tiktok: {
+          mobile: 'tiktok://upload',
+          desktop: 'https://www.tiktok.com/upload'
+        },
+        pinterest: {
+          mobile: 'pinterest://create',
+          desktop: 'https://www.pinterest.com/pin-builder/'
+        },
       };
       
-      const link = links[providerKey];
-      // Wait a bit to show the copied state before opening
+      const targetLink = isMobile ? platformLinks[providerKey].mobile : platformLinks[providerKey].desktop;
+      
+      // Open platform after brief delay
       setTimeout(() => {
-        window.open(link, '_blank', 'width=600,height=500');
-      }, 1500);
+        if (isMobile) {
+          // Try app deep link
+          const tempLink = document.createElement('a');
+          tempLink.href = targetLink;
+          tempLink.target = '_blank';
+          document.body.appendChild(tempLink);
+          tempLink.click();
+          document.body.removeChild(tempLink);
+          
+          // Fallback to web if app doesn't open
+          setTimeout(() => {
+            if (document.hasFocus()) {
+              const webFallbacks = {
+                instagram: 'https://www.instagram.com',
+                twitter: 'https://twitter.com/compose/tweet',
+                facebook: 'https://www.facebook.com',
+                linkedin: 'https://www.linkedin.com/feed/',
+                snapchat: 'https://web.snapchat.com',
+                tiktok: 'https://www.tiktok.com',
+                pinterest: 'https://www.pinterest.com'
+              };
+              window.open(webFallbacks[providerKey], '_blank');
+            }
+          }, 1000);
+        } else {
+          // Desktop: open in new tab
+          window.open(targetLink, '_blank', 'width=600,height=500');
+        }
+      }, 1000);
+      
     } catch (error) {
       console.error('Failed to share:', error);
-      alert('Failed to share image. Please try again.');
+      alert('Failed to prepare image for sharing. Please try again.');
     }
   };
 
@@ -544,7 +689,14 @@ const ShareCard = ({
                 {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
                 <span className="ml-2">
                   {isConverting ? 'Converting images...' : 
-                   sharesCopied ? 'Copied Image! Paste to share.' : `Share on ${provider.label}`}
+                   sharesCopied ? (
+                     ((providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest')) 
+                       ? 'Image Saved! Check downloads.' 
+                       : 'Copied! Paste to share.'
+                   ) : 
+                   ((providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest'))
+                     ? `Save & Open ${provider.label}`
+                     : `Copy & Open ${provider.label}`}
                 </span>
               </Button>
             )}
@@ -594,11 +746,16 @@ const ShareCard = ({
               >
                 {provider.icon} 
                 <span className="ml-2">
-                  {isConverting ? 'Converting...' : `Share to ${provider.label}`}
+                  {isConverting ? 'Converting...' : 
+                   ((providerKey === 'instagram') || (providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest'))
+                     ? `Save & Open ${provider.label}`
+                     : `Copy & Open ${provider.label}`}
                 </span>
               </Button>
               <p className="text-xs text-gray-400 text-center mt-2">
-                Opens native share sheet with image attached
+                {((providerKey === 'instagram') || (providerKey === 'snapchat') || (providerKey === 'tiktok') || (providerKey === 'pinterest'))
+                  ? 'Saves image to photos then opens app'
+                  : 'Copies image to clipboard then opens app'}
               </p>
             </div>
           )}
