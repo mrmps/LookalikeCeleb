@@ -317,8 +317,8 @@ const PhotoUpload: React.FC<PhotoUploadProps> = ({ onImageUpload }) => {
                     </div>
                   </div>
                   
-                  {/* Minimal instruction text */}
-                  <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 text-center">
+                  {/* Minimal instruction text - moved to top to avoid button collision */}
+                  <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 text-center">
                     <p className="text-white/80 text-sm font-light">Center your face within the guide</p>
                   </div>
                 </div>
