@@ -91,22 +91,22 @@ const ShareCard = ({
   const shareText = useMemo(() => {
     switch (providerKey) {
       case 'instagram':
-        return `wait I'm ${percentage}% similar to ${celebName} 😭\n\nthis app is actually crazy`;
+        return `wait I'm ${percentage}% similar to ${celebName}\n\nthis app is actually crazy`;
         
       case 'twitter':
-        return `No way... I'm ${percentage}% similar to ${celebName} 🤯\n\nTried this AI app and I'm shook 💀`;
+        return `No way... I'm ${percentage}% similar to ${celebName}\n\nTried this AI app and I'm shook`;
         
       case 'facebook':
-        return `lol just tried this app and apparently I'm ${percentage}% similar to ${celebName}\n\nkinda scared how accurate this is 😅`;
+        return `lol just tried this app and apparently I'm ${percentage}% similar to ${celebName}\n\nkinda scared how accurate this is`;
         
       case 'linkedin':
         return `Tested an AI facial similarity app - ${percentage}% match with ${celebName}. Interesting to see how these algorithms work.`;
         
       case 'tiktok':
-        return `POV: you're ${percentage}% similar to ${celebName} 💀\n\nthis app is actually insane`;
+        return `POV: you're ${percentage}% similar to ${celebName}\n\nthis app is actually insane`;
         
       case 'snapchat':
-        return `BRUH I'm ${percentage}% similar to ${celebName} 😭\n\nthis app is wild`;
+        return `BRUH I'm ${percentage}% similar to ${celebName}\n\nthis app is wild`;
         
       case 'pinterest':
         return `I'm ${percentage}% similar to ${celebName}! Check out this AI celebrity lookalike app`;

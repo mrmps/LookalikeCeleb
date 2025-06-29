@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
 import { ensureSafeImage } from '@/lib/utils';
 import { SafeImg } from '@/components/ui/SafeImg';
+import Markdown from 'react-markdown';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
@@ -52,9 +53,11 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                 <Eye className="w-4 h-4 text-blue-600" />
                 <h3 className="font-semibold text-blue-900">Photo Analysis</h3>
               </div>
-              <p className="text-sm text-blue-800 leading-relaxed">
-                {selectedMatch.description}
-              </p>
+              <div className="text-sm text-blue-800 leading-relaxed">
+                <Markdown>
+                  {selectedMatch.description}
+                </Markdown>
+              </div>
             </div>
           </Card>
 
@@ -191,7 +194,11 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                         </span>
                       </div>
                       
-                      <p className="text-sm text-gray-600 mb-2 leading-relaxed">{celebrity.description}</p>
+                      <div className="text-sm text-gray-600 mb-2 leading-relaxed">
+                        <Markdown>
+                          {celebrity.description}
+                        </Markdown>
+                      </div>
                       
                       {/* Progress Bar */}
                       <div className="w-full bg-gray-100 rounded-full h-1.5">
