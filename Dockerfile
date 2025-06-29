@@ -15,7 +15,7 @@ COPY . .
 RUN bun run build
 
 # Compile server TypeScript once (quicker cold‑starts)
-RUN bunx tsc --project tsconfig.json --outDir ./.build
+RUN bun build ./server/index.ts --outdir ./.build/server --target bun
 
 # ─────────────── 3) Runtime stage ───────────────
 FROM oven/bun:1.1-slim AS runner
