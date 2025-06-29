@@ -185,13 +185,17 @@ CRITICAL: Return exactly 3 matches - no exceptions. Base matches on actual facia
   }
 };
 
-// Create Hono app with CORS and proper route typing
+// Create Hono app with CORS and proper route typing. Note that since we are serving the app and the server from the same Hono server, we don't need CORS in production
 const app = new Hono()
-  .use('*', cors({
-    origin: ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://localhost:8083', 'http://localhost:8084', 'http://localhost:8085'],
+
+// Only apply CORS in development - not needed in production since same-origin
+if (process.env.NODE_ENV !== 'production') {
+  app.use('*', cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://localhost:8083', 'http://localhost:8084', 'http://localhost:8085'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowHeaders: ['Content-Type', 'Authorization'],
   }))
+}
 
 const routes = app
   .post('/api/matches', async (c) => {
