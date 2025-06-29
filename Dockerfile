@@ -1,43 +1,43 @@
-# ─────────────── 1) Dependencies stage ───────────────
-FROM oven/bun:1.1 AS deps
+# ---- Build stage ----
+FROM oven/bun:1.1 AS builder
 WORKDIR /app
 
-# Copy lock‑files first so “bun install” is cached unless deps change
-COPY bun.lockb package*.json ./
-RUN bun install --production --no-save
+# Copy package files first for better layer caching
+COPY package*.json bun.lockb ./
 
-# ─────────────── 2) Build stage ───────────────
-FROM deps AS builder
-# Bring in the full source
+# Install dependencies (remove --frozen-lockfile to allow lockfile updates)
+RUN bun install
+
+# Copy project files
 COPY . .
 
-# Build the React client → ./dist
+# Build the React client (outputs to ./dist)
 RUN bun run build
 
-# Compile server TypeScript once (quicker cold‑starts)
-RUN bun build ./server/index.ts --outdir ./.build/server --target bun
-
-# ─────────────── 3) Runtime stage ───────────────
+# ---- Production stage ----
 FROM oven/bun:1.1-slim AS runner
 WORKDIR /app
 
-# Copy production deps and built artefacts only
-COPY --from=deps    /app/node_modules           ./node_modules
-COPY --from=builder /app/dist                  ./dist
-COPY --from=builder /app/.build/server         ./server
-COPY --from=builder /app/public                ./public
-COPY package.json .
+# Install Node.js for @hono/node-server
+# RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
 
-# Run as an unprivileged UID
-RUN adduser --system --uid 1001 appuser && \
-    chown -R appuser:appuser /app
-USER appuser
+# Copy built frontend
+COPY --from=builder /app/dist ./dist
 
+# Copy server files and dependencies
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/package.json ./
+
+# Copy public assets that the server might need to serve
+COPY --from=builder /app/public ./public
+
+# Set production environment so Hono serves static files
 ENV NODE_ENV=production
-ENV PORT=3001
+# Don't set PORT - let Railway set it
+
+# Expose server port (default, can be overridden by environment)
 EXPOSE 3001
 
-HEALTHCHECK --interval=30s --timeout=3s CMD \
-  curl -f http://localhost:$PORT/health || exit 1
-
-CMD ["bun", "run", "server/index.js"]
+# Start the Hono server which will serve both API and React app
+CMD ["bun", "run", "server/index.ts"] 
