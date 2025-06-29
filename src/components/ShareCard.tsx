@@ -4,7 +4,7 @@ import React, {
 } from 'react';
 import {
   Download, Copy, Check, Instagram, Facebook, Twitter,
-  Linkedin, Palette, Sparkles,
+  Linkedin, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import { Drawer, DrawerContent, DrawerHeader } from '@/components/ui/drawer';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
 import * as htmlToImage from 'html-to-image';           // <–– NEW (handles CORS, font embedding, @2x etc.)
-import { cn } from '@/lib/utils';
+import { cn, ensureSafeImage } from '@/lib/utils';
 
 /*–––––––––––––––––––––––––  CONSTANTS  –––––––––––––––––––––––*/
 
@@ -73,9 +73,10 @@ const ShareCard = ({
   const [providerKey, setProviderKey] = useState<ProviderKey>('instagram');
   const [userName, setUserName] = useState('Me');
   const [celebName, setCelebName] = useState(celebrityName);
-  const [accent, setAccent] = useState('#000000');
+
   const [copied, setCopied] = useState(false);
   const [sharesCopied, setSharesCopied] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
 
   // Update celebrity name when prop changes
   useEffect(() => {
@@ -123,6 +124,24 @@ const ShareCard = ({
     const element = cardRef.current;
     
     try {
+      // Convert images to safe base64 format just before capture
+      let safeUserImage = userImage;
+      let safeCelebrityImage = celebrityImage;
+      
+      try {
+        setIsConverting(true);
+        console.log('Converting images to safe format for mobile export...');
+        [safeUserImage, safeCelebrityImage] = await Promise.all([
+          ensureSafeImage(userImage),
+          ensureSafeImage(celebrityImage)
+        ]);
+      } catch (error) {
+        console.warn('Image conversion failed, using original images:', error);
+        // Continue with original images (may fail on mobile but work on desktop)
+      } finally {
+        setIsConverting(false);
+      }
+      
       // Wait for all images to load
       const images = element.querySelectorAll('img');
       await Promise.all(Array.from(images).map(img => {
@@ -133,13 +152,13 @@ const ShareCard = ({
             console.warn('Image failed to load:', img.src);
             resolve(); // Continue even if image fails
           };
-          // Timeout after 3 seconds
-          setTimeout(() => resolve(), 3000);
+          // Timeout after 5 seconds for base64 images (they can be large)
+          setTimeout(() => resolve(), 5000);
         });
       }));
       
-      // Additional small delay to ensure rendering is complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Additional delay to ensure rendering is complete
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Temporarily remove border for capture
       const originalBorder = element.style.border;
@@ -196,7 +215,7 @@ const ShareCard = ({
       const dataUrl = canvas.toDataURL('image/png');
       
       if (!dataUrl || dataUrl === 'data:,') {
-        throw new Error('Generated image is empty');
+        throw new Error('Generated image is empty - this usually indicates a CORS/security issue on mobile browsers');
       }
       
       return dataUrl;
@@ -206,6 +225,14 @@ const ShareCard = ({
       if (element.style.border !== undefined) {
         element.style.border = '';
       }
+      
+      // Provide specific error messages for common mobile issues
+      if (error instanceof Error) {
+        if (error.message.includes('CORS') || error.message.includes('tainted') || error.message.includes('empty')) {
+          console.error('Mobile canvas tainting detected - this should be fixed by base64 conversion');
+        }
+      }
+      
       return undefined;
     }
   }, [provider]);
@@ -319,7 +346,7 @@ const ShareCard = ({
             </Select>
           </div>
 
-          {/* text + accent */}
+          {/* text inputs */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="user">Your name</Label>
@@ -328,17 +355,6 @@ const ShareCard = ({
             <div>
               <Label htmlFor="celeb">Celebrity</Label>
               <Input id="celeb" value={celebName} onChange={e => setCelebName(e.target.value)} />
-            </div>
-            <div className="col-span-2 flex items-center gap-2">
-              <Label htmlFor="accent"><Palette className="w-4 h-4" /></Label>
-              <Input
-                id="accent" type="color" className="w-10 p-0"
-                value={accent} onChange={e => setAccent(e.target.value)}
-              />
-              <Input
-                value={accent} onChange={e => setAccent(e.target.value)}
-                className="flex-1 font-mono"
-              />
             </div>
           </div>
 
@@ -362,6 +378,7 @@ const ShareCard = ({
                   src={userImage} 
                   alt={userName}
                   className="w-full h-full object-cover"
+                  crossOrigin="anonymous"
                   onError={(e) => {
                     console.log('User image failed to load:', userImage);
                     e.currentTarget.style.backgroundColor = '#f3f4f6';
@@ -388,6 +405,7 @@ const ShareCard = ({
                   src={celebrityImage} 
                   alt={celebName}
                   className="w-full h-full object-cover"
+                  crossOrigin="anonymous"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                   <div className="p-3">
@@ -421,22 +439,41 @@ const ShareCard = ({
 
           {/* ACTION BUTTONS */}
           <div className="space-y-3">
-            <Button onClick={handleCopy} className={cn('w-full h-11 text-white rounded-lg',
-              copied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-900 hover:bg-gray-800')}>
+            <Button 
+              onClick={handleCopy} 
+              disabled={isConverting}
+              className={cn('w-full h-11 text-white rounded-lg',
+                copied ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-900 hover:bg-gray-800')}
+            >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span className="ml-2">{copied ? 'Copied Image!' : 'Copy image'}</span>
-            </Button>
-
-            <Button onClick={shareTo} className={cn('w-full h-11 text-white rounded-lg', 
-              sharesCopied ? 'bg-green-600 hover:bg-green-700' : provider.btn)}>
-              {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
               <span className="ml-2">
-                {sharesCopied ? 'Copied Image! Paste to share.' : `Share on ${provider.label}`}
+                {isConverting ? 'Converting images...' : copied ? 'Copied Image!' : 'Copy image'}
               </span>
             </Button>
 
-            <Button onClick={handleDownload} variant="outline" className="w-full h-11">
-              <Download className="w-4 h-4" /> <span className="ml-2">Save image</span>
+            <Button 
+              onClick={shareTo} 
+              disabled={isConverting}
+              className={cn('w-full h-11 text-white rounded-lg', 
+                sharesCopied ? 'bg-green-600 hover:bg-green-700' : provider.btn)}
+            >
+              {sharesCopied ? <Check className="w-4 h-4" /> : provider.icon} 
+              <span className="ml-2">
+                {isConverting ? 'Converting images...' : 
+                 sharesCopied ? 'Copied Image! Paste to share.' : `Share on ${provider.label}`}
+              </span>
+            </Button>
+
+            <Button 
+              onClick={handleDownload} 
+              disabled={isConverting}
+              variant="outline" 
+              className="w-full h-11"
+            >
+              <Download className="w-4 h-4" /> 
+              <span className="ml-2">
+                {isConverting ? 'Converting images...' : 'Save image'}
+              </span>
             </Button>
           </div>
         </div>

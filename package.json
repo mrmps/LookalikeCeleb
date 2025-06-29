@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "tsx server/index.ts",
-    "server:dev": "tsx watch server/index.ts",
+    "server:dev": "PORT=3001 tsx watch server/index.ts",
     "client": "vite"
   },
   "dependencies": {

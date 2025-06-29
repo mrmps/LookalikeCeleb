@@ -36,8 +36,8 @@ COPY --from=builder /app/public ./public
 ENV NODE_ENV=production
 # Don't set PORT - let Railway set it
 
-# Expose server port (Railway will override this)
-EXPOSE 3000
+# Expose server port (default, can be overridden by environment)
+EXPOSE 3001
 
 # Start the Hono server which will serve both API and React app
 CMD ["bun", "run", "server/index.ts"] 

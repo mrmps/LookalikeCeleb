@@ -3,6 +3,7 @@ import { Star, Share2, RotateCcw, Crown, Users, TrendingUp, Eye, Check } from 'l
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/Header';
+import { ensureSafeImage } from '@/lib/utils';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
@@ -75,6 +76,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                 src={uploadedImage} 
                 alt="Your photo" 
                 className="w-full h-full object-cover"
+                crossOrigin="anonymous"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                 <div className="p-3">
@@ -99,6 +101,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                 src={selectedMatch.image} 
                 alt={selectedMatch.name}
                 className="w-full h-full object-cover"
+                crossOrigin="anonymous"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
                 <div className="p-3">
@@ -128,22 +131,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
         <div className="pt-2">
           <Button 
             onClick={async () => {
-              const convertToBase64 = async (url: string): Promise<string> => {
-                if (url.startsWith('data:')) return url;
-                try {
-                  const apiUrl = import.meta.env.PROD 
-                    ? `/api/base64?url=${encodeURIComponent(url)}`
-                    : `http://localhost:3001/api/base64?url=${encodeURIComponent(url)}`;
-                  const res = await fetch(apiUrl);
-                  const data = await res.json();
-                  return data.data || url;
-                } catch (_) {
-                  return url;
-                }
-              };
-
-              const base64Image = await convertToBase64(selectedMatch.image);
-
+              const base64Image = await ensureSafeImage(selectedMatch.image);
               onShare({ name: selectedMatch.name, image: base64Image, percentage: selectedMatch.percentage });
             }}
             className="w-full bg-gray-900 hover:bg-gray-800 text-white h-12 rounded-2xl font-medium shadow-sm active:scale-[0.98] transition-all"
@@ -182,6 +170,7 @@ const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({
                         src={celebrity.image} 
                         alt={celebrity.name}
                         className="w-14 h-14 rounded-xl object-cover border border-gray-200"
+                        crossOrigin="anonymous"
                       />
                       {index === 0 && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-400 rounded-full flex items-center justify-center">
