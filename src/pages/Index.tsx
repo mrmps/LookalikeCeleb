@@ -5,7 +5,7 @@ import ShareCard from '@/components/ShareCard';
 import Header from '@/components/Header';
 import FAQ from '@/components/FAQ';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, RotateCcw } from 'lucide-react';
 import { hc } from 'hono/client';
 import type { AppType } from '../../server/hono';
 import type { Match } from '@/types/match';
@@ -30,7 +30,6 @@ const Index = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [showErrorDetails, setShowErrorDetails] = useState(false);
 
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB limit enforced by providers
 
@@ -104,7 +103,6 @@ const Index = () => {
     setAppState('processing');
     setError(null);
     setProgress(0);
-    setShowErrorDetails(false);
     
     try {
       // Fetch data during processing state
@@ -129,7 +127,6 @@ const Index = () => {
     setAnalysisResult(null);
     setError(null);
     setProgress(0);
-    setShowErrorDetails(false);
     setAppState('landing');
   };
 
@@ -189,8 +186,15 @@ const Index = () => {
             <p className="text-gray-600 leading-relaxed mb-8">
               {cleanError}
             </p>
-            
-            <div className="space-y-4">
+            {/* Always show technical error details immediately */}
+            {error && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-xl border-l-4 border-red-200">
+                <p className="text-xs text-gray-600 font-mono break-words leading-relaxed">
+                  {error}
+                </p>
+              </div>
+            )}
+            <div className="space-y-4 mt-4">
               <Button 
                 onClick={resetApp}
                 className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-2xl text-lg shadow-sm"
@@ -198,35 +202,6 @@ const Index = () => {
                 <RotateCcw className="w-5 h-5 mr-3" />
                 Try Again
               </Button>
-              
-              {/* Technical Details Toggle */}
-              <Button
-                onClick={() => setShowErrorDetails(!showErrorDetails)}
-                variant="ghost"
-                className="w-full text-gray-500 hover:text-gray-700 text-sm"
-              >
-                {showErrorDetails ? (
-                  <>
-                    <ChevronUp className="w-4 h-4 mr-2" />
-                    Hide technical details
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4 mr-2" />
-                    Show technical details
-                  </>
-                )}
-              </Button>
-              
-              {/* Technical Error Details */}
-              {showErrorDetails && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-xl border-l-4 border-red-200">
-                  <p className="text-xs text-gray-600 font-mono break-words leading-relaxed">
-                    {error}
-                  </p>
-                </div>
-              )}
-              
               <p className="text-sm text-gray-500 mt-4">
                 Make sure you have a stable internet connection and try uploading a clear photo of your face.
               </p>
