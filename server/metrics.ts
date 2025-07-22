@@ -153,7 +153,13 @@ export function registerMetrics(app: Hono) {
     await next();
     const latency = Date.now() - start;
 
-    metrics.addRequest(latency, c.req.path, c.res.status);
+    // ----------------------------------------------
+    // Only track requests that relate to image work
+    // ----------------------------------------------
+    const TRACKED_ENDPOINTS = ['/api/matches', '/api/base64'];
+    if (TRACKED_ENDPOINTS.some((ep) => c.req.path.startsWith(ep))) {
+      metrics.addRequest(latency, c.req.path, c.res.status);
+    }
   });
 
   // Capture uncaught route errors
