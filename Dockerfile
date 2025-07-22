@@ -1,5 +1,9 @@
 # ---- Build stage ----
 FROM oven/bun:1.1 AS builder
+ARG VITE_PLAUSIBLE_DOMAIN
+ARG VITE_PLAUSIBLE_HOST
+ENV VITE_PLAUSIBLE_DOMAIN=$VITE_PLAUSIBLE_DOMAIN
+ENV VITE_PLAUSIBLE_HOST=$VITE_PLAUSIBLE_HOST
 WORKDIR /app
 
 # Copy package files first for better layer caching
