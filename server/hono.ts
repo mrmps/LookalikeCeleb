@@ -63,7 +63,7 @@ const initializeProviders = () => {
   multiplexer.addModel(inference, 5, 'google/gemma-3-27b-instruct/bf-16');
 
   // OpenAI o3 setup (FALLBACK)
-  const openaiKey = process.env.OPENAI_API_KEY ?? process.env['Openai_api_key'];
+  const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) {
     throw new Error('OPENAI_API_KEY not configured. Please set your OpenAI API key.');
   }
