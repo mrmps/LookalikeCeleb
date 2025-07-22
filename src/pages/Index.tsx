@@ -251,7 +251,7 @@ const Index = () => {
 
           <h2 className="text-2xl font-semibold text-gray-900 mb-4 text-center">Analyzing your photo…</h2>
           <p className="text-gray-600 text-center leading-relaxed max-w-sm mb-12">
-            We're matching your features against thousands of celebrity profiles.
+            We're matching your features against thousands of celebrity profiles. This takes up to 25 seconds.
           </p>
 
           {/* Animated progress bar */}
