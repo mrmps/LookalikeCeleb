@@ -8,17 +8,9 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { hc } from 'hono/client';
 import type { AppType } from '../../server/hono';
+import type { Match } from '@/types/match';
 
 type AppState = 'landing' | 'processing' | 'results' | 'error';
-
-type Match = {
-  name: string;
-  percentage: number;
-  image: string;
-  description: string;
-  confidence: string;
-  category: string;
-};
 
 type AnalysisResult = {
   matches: Match[];
@@ -40,6 +32,16 @@ const Index = () => {
   const [progress, setProgress] = useState(0);
   const [showErrorDetails, setShowErrorDetails] = useState(false);
 
+  const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB limit enforced by providers
+
+  // Helper to estimate raw byte size from a data-URL
+  const isImageTooLarge = (dataUrl: string): boolean => {
+    const base64 = dataUrl.split(',')[1] || '';
+    // Each Base-64 character encodes 6 bits => 3/4 byte per char
+    const sizeInBytes = (base64.length * 3) / 4 - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
+    return sizeInBytes > MAX_IMAGE_BYTES;
+  };
+
   const fetchMatches = async (imageFile: string): Promise<AnalysisResult> => {
     // Convert image to base64
     const base64Data = imageFile.split(',')[1]; // Remove data:image/jpeg;base64, prefix
@@ -54,9 +56,22 @@ const Index = () => {
     }
     
     const data = await res.json();
-    // The server now returns both analysis and matches
+
+    // Map server response to Match[] including placeholder fields
+    const mappedMatches = (data.matches || []).map((m: unknown) => {
+      const raw = m as { name: string; percentage: number; image: string; description: string; category?: string };
+      return {
+        name: raw.name,
+        percentage: raw.percentage,
+        image: raw.image,
+        description: raw.description,
+        confidence: raw.percentage >= 90 ? 'Very High' : raw.percentage >= 80 ? 'High' : 'Medium',
+        category: raw.category ?? ''
+      } as Match;
+    }) as Match[];
+
     return {
-      matches: data.matches || []
+      matches: mappedMatches
     };
   };
 
@@ -78,6 +93,13 @@ const Index = () => {
   }, [appState]);
 
   const handleImageUpload = async (imageUrl: string) => {
+    // Reject images larger than 4 MB before sending to the server
+    if (isImageTooLarge(imageUrl)) {
+      setError('Your image file is larger than 4 MB. Please choose a smaller image.');
+      setAppState('error');
+      return;
+    }
+
     setUploadedImage(imageUrl);
     setAppState('processing');
     setError(null);

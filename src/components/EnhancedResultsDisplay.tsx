@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import { ensureSafeImage } from '@/lib/utils';
 import { SafeImg } from '@/components/ui/SafeImg';
 import Markdown from 'react-markdown';
+import type { Match } from '@/types/match';
 
 interface EnhancedResultsDisplayProps {
   uploadedImage: string;
@@ -13,15 +14,6 @@ interface EnhancedResultsDisplayProps {
   onReset: () => void;
   onShare: (matchData: { name: string; image: string; percentage: number }) => void;
 }
-
-type Match = {
-  name: string;
-  percentage: number;
-  image: string;
-  description: string;
-  confidence: string;
-  category: string;
-};
 
 const EnhancedResultsDisplay: React.FC<EnhancedResultsDisplayProps> = ({ 
   uploadedImage,
