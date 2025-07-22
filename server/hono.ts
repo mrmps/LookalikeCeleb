@@ -2,15 +2,112 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
+import { Multiplexer } from '@upstash/model-multiplexer';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import OpenAI from 'openai';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { zodResponseFormat } from 'openai/helpers/zod';
+import { z } from 'zod';
+import { metrics, registerMetrics } from './metrics';
 
-interface CelebrityMatch {
-  name: string;
-  percentage: number;
-  description: string;
-}
+// ==========================================
+// Type Definitions & Schemas
+// ==========================================
 
-// Yahoo Image Search function
+// Zod schema for celebrity matches
+const CelebrityMatchSchema = z.object({
+  name: z.string().describe('Full name of the celebrity'),
+  percentage: z.number().min(70).max(99).describe('Match confidence percentage'),
+  description: z.string().max(500).describe('Brief notable fact about the celebrity'),
+});
+
+const CelebrityMatchesSchema = z.object({
+  matches: z.array(CelebrityMatchSchema).length(3).describe('Exactly 3 celebrity matches'),
+});
+
+// Infer TypeScript types from Zod schemas
+type CelebrityMatch = z.infer<typeof CelebrityMatchSchema>;
+type CelebrityMatchWithImage = CelebrityMatch & { image: string };
+
+// ==========================================
+// Configuration
+// ==========================================
+
+const config = {
+  server: {
+    port: process.env.PORT ? Number(process.env.PORT) : 3000,
+    host: '0.0.0.0',
+    isProduction: process.env.NODE_ENV === 'production',
+  },
+} as const;
+
+// ==========================================
+// Model Multiplexer Setup
+// ==========================================
+
+// Create multiplexer instance
+const multiplexer = new Multiplexer();
+
+// Initialize providers
+const initializeProviders = () => {
+  // Inference.net Gemma 27B setup (PRIMARY)
+  if (!process.env.INFERENCE_API_KEY) {
+    throw new Error('INFERENCE_API_KEY not configured. Please set your Inference.net API key.');
+  }
+  const inference = new OpenAI({
+    apiKey: process.env.INFERENCE_API_KEY,
+    baseURL: 'https://api.inference.net/v1',
+  });
+  multiplexer.addModel(inference, 5, 'google/gemma-3-27b-instruct/bf-16');
+
+  // OpenAI o3 setup (FALLBACK)
+  const openaiKey = process.env.OPENAI_API_KEY ?? process.env['Openai_api_key'];
+  if (!openaiKey) {
+    throw new Error('OPENAI_API_KEY not configured. Please set your OpenAI API key.');
+  }
+  const openai = new OpenAI({ apiKey: openaiKey });
+  multiplexer.addFallbackModel(openai, 5, 'o3-mini'); // Using o3-mini as o3 might not be directly available
+
+  console.log('✅ Multiplexer initialized with Inference.net Gemma 27B (primary) and OpenAI o3 (fallback)');
+};
+
+// Initialize on startup
+initializeProviders();
+
+// ==========================================
+// Prompts
+// ==========================================
+
+const SYSTEM_PROMPT = `You are an expert facial recognition specialist with advanced training in celebrity identification. Your sophisticated AI algorithms analyze facial geometry, bone structure, and distinctive features to detect precise celebrity matches. You ALWAYS identify exactly 3 matches with scientific confidence.`;
+
+const USER_ANALYSIS_PROMPT = `Analyze this facial image using advanced biometric detection algorithms. Identify the TOP 3 celebrity matches based on:
+
+- apparent gender, age, ethnicity, and hair color
+- Facial bone structure and geometry
+- Eye shape, color, spacing, and proportions  
+- Nose bridge and nostril configuration
+- Jawline definition and chin structure
+- Cheekbone prominence and facial symmetry
+
+For each detected match:
+- State your detection confidence based on facial feature analysis
+- Provide a brief fact about why this celebrity is notable
+- Use professional but engaging tone
+
+CRITICAL: Return exactly 3 matches - no exceptions. Base matches on actual facial feature detection, not random selection. DO NOT USE MARKDOWN, especially for descriptions. No more than 1-2 sentences for descriptions!`;
+
+// ==========================================
+// Utility Functions
+// ==========================================
+
+/**
+ * Search for celebrity portrait images using Yahoo Image Search
+ */
 const searchCelebrityImage = async (celebrityName: string): Promise<string> => {
+  const PLACEHOLDER_IMAGE = 'https://bitslog.com/wp-content/uploads/2013/01/unknown-person1.gif';
+  
   try {
     const query = `${celebrityName} face portrait`;
     const encodedQuery = encodeURIComponent(query);
@@ -19,7 +116,7 @@ const searchCelebrityImage = async (celebrityName: string): Promise<string> => {
     
     const htmlString = jsonResponse.html;
     
-    // Use regex to extract image URLs from the HTML
+    // Extract image URLs from the HTML
     const dataRegex = /data='({[^']+})'/g;
     let match;
     while ((match = dataRegex.exec(htmlString)) !== null) {
@@ -33,169 +130,90 @@ const searchCelebrityImage = async (celebrityName: string): Promise<string> => {
       }
     }
     
-    // Fallback to a placeholder if no image found
-    return `https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80`;
+    return PLACEHOLDER_IMAGE;
   } catch (error) {
     console.error('Error fetching celebrity image:', error);
-    return `https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?auto=format&fit=crop&w=400&q=80`;
+    return PLACEHOLDER_IMAGE;
   }
 };
 
-// Inference.net API call for celebrity matching with timeout and retry logic
-const analyzeCelebrityMatch = async (imageBase64: string, retryCount = 0) => {
-  // Check if API key is configured
-  if (!process.env.INFERENCE_API_KEY) {
-    throw new Error('INFERENCE_API_KEY not configured. Please set your API key in the .env file.');
-  }
+/**
+ * Add portrait images to celebrity matches
+ */
+const enrichMatchesWithImages = async (matches: CelebrityMatch[]): Promise<CelebrityMatchWithImage[]> => {
+  return Promise.all(
+    matches.map(async (match) => ({
+      ...match,
+      image: await searchCelebrityImage(match.name),
+    }))
+  );
+};
 
-  const MAX_RETRIES = 2;
-  const TIMEOUT_MS = 60000; // 60 seconds timeout
+// ==========================================
+// AI Analysis
+// ==========================================
 
-  try {
-    // Create abort controller for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-    const response = await fetch('https://api.inference.net/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.INFERENCE_API_KEY}`,
+/**
+ * Analyze celebrity match using the multiplexer
+ */
+const analyzeCelebrityMatch = async (imageBase64: string): Promise<{ matches: CelebrityMatchWithImage[] }> => {
+  const completion = await multiplexer.chat.completions.create({
+    model: 'auto', // Multiplexer will override with selected model
+    messages: [
+      {
+        role: 'system',
+        content: SYSTEM_PROMPT,
       },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: 'google/gemma-3-27b-instruct/bf-16',
-        messages: [
+      {
+        role: 'user',
+        content: [
           {
-            role: 'system',
-            content: 'You are an expert facial recognition specialist with advanced training in celebrity identification. Your sophisticated AI algorithms analyze facial geometry, bone structure, and distinctive features to detect precise celebrity matches. You ALWAYS identify exactly 3 matches with scientific confidence.'
+            type: 'image_url',
+            image_url: {
+              url: `data:image/jpeg;base64,${imageBase64}`,
+            },
           },
           {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: { url: `data:image/jpeg;base64,${imageBase64}` }
-              },
-              {
-                type: 'text',
-                text: `Analyze this facial image using advanced biometric detection algorithms. Identify the TOP 3 celebrity matches based on:
-
-- apparent gender, age, ethnicity, and hair color
-- Facial bone structure and geometry
-- Eye shape, color,spacing, and proportions  
-- Nose bridge and nostril configuration
-- Jawline definition and chin structure
-- Cheekbone prominence and facial symmetry
-
-For each detected match:
-- State your detection confidence based on facial feature analysis
-- Provide a brief fact about why this celebrity is notable
-- Use professional but engaging tone
-
-CRITICAL: Return exactly 3 matches - no exceptions. Base matches on actual facial feature detection, not random selection. Return the matches as JSON and also return confidence and a short description of the match. DO NOT USE MARKDOWN, especially for descriptions. No more than 1-2 sentences for descriptions!`
-              }
-            ]
-          }
+            type: 'text',
+            text: USER_ANALYSIS_PROMPT,
+          },
         ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'celebrity_matches',
-            strict: true,
-            schema: {
-              type: 'object',
-              properties: {
-                matches: {
-                  type: 'array',
-                  minItems: 3,
-                  maxItems: 3,
-                  items: {
-                    type: 'object',
-                    properties: {
-                      name: { type: 'string' },
-                      percentage: { type: 'number', minimum: 70, maximum: 99 },
-                      description: { type: 'string', maxLength: 500 }
-                    },
-                    required: ['name', 'percentage', 'description'],
-                    additionalProperties: false
-                  }
-                }
-              },
-              required: ['matches'],
-              additionalProperties: false
-            }
-          }
-        }
-      })
-    });
+      },
+    ],
+    response_format: zodResponseFormat(CelebrityMatchesSchema, 'celebrity_matches'),
+  });
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      
-      // Check if it's a timeout error (524) and retry
-      if (response.status === 524 && retryCount < MAX_RETRIES) {
-        console.log(`API timeout, retrying... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-        await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1))); // Exponential backoff
-        return analyzeCelebrityMatch(imageBase64, retryCount + 1);
-      }
-      
-      throw new Error(`Inference API error (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-    const result = JSON.parse(data.choices[0].message.content);
-    
-    // Add celebrity images to each match
-    const matchesWithImages = await Promise.all(
-      result.matches.map(async (match: CelebrityMatch) => ({
-        ...match,
-        image: await searchCelebrityImage(match.name)
-      }))
-    );
-
-    return { 
-      matches: matchesWithImages 
-    };
-  } catch (error) {
-    console.error('Error analyzing celebrity match:', error);
-    
-    // Handle specific error types and provide fallback
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        // If it's our timeout, try to retry
-        if (retryCount < MAX_RETRIES) {
-          console.log(`Request timeout, retrying... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-          await new Promise(resolve => setTimeout(resolve, 3000 * (retryCount + 1))); // Longer wait for timeout retries
-          return analyzeCelebrityMatch(imageBase64, retryCount + 1);
-        }
-        throw new Error('Request timed out after multiple attempts. The AI service may be overloaded.');
-      }
-      
-      if (error.message.includes('524') && retryCount < MAX_RETRIES) {
-        console.log(`Server timeout (524), retrying... (attempt ${retryCount + 1}/${MAX_RETRIES})`);
-        await new Promise(resolve => setTimeout(resolve, 5000 * (retryCount + 1))); // Even longer wait for 524 errors
-        return analyzeCelebrityMatch(imageBase64, retryCount + 1);
-      }
-    }
-    
-    throw error; // Re-throw the error if we can't handle it
-  }
+  // Parse and validate the response
+  const result = JSON.parse(completion.choices[0].message.content || '{}');
+  const validated = CelebrityMatchesSchema.parse(result);
+  
+  // Add images to matches
+  const matchesWithImages = await enrichMatchesWithImages(validated.matches);
+  
+  return { matches: matchesWithImages };
 };
 
-// Create Hono app with CORS and proper route typing. Note that since we are serving the app and the server from the same Hono server, we don't need CORS in production
-const app = new Hono()
+// ==========================================
+// HTTP Server
+// ==========================================
 
-// Only apply CORS in development - not needed in production since same-origin
-if (process.env.NODE_ENV !== 'production') {
+const app = new Hono();
+
+// Apply CORS only in development
+if (!config.server.isProduction) {
   app.use('*', cors({
     origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082', 'http://localhost:8083', 'http://localhost:8084', 'http://localhost:8085'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowHeaders: ['Content-Type', 'Authorization'],
-  }))
+  }));
 }
+
+// Attach request metrics middleware and routes
+registerMetrics(app);
+
+// ==========================================
+// API Routes
+// ==========================================
 
 const routes = app
   .post('/api/matches', async (c) => {
@@ -211,35 +229,26 @@ const routes = app
       }
       
       const result = await analyzeCelebrityMatch(imageBase64);
+      // Update celebrity occurrence metrics
+      result.matches.forEach((match) => metrics.addCelebrity(match.name));
       return c.json(result);
     } catch (error) {
-      console.error('Error processing matches request:', error);
+      console.error('Error processing matches:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+
+      // Record failure in metrics
+      metrics.addFailure('/api/matches', errorMessage, 500);
       
-      // Handle specific error types
-      if (errorMessage.includes('INFERENCE_API_KEY not configured')) {
-        return c.json({ 
-          error: 'API Configuration Error',
-          message: 'INFERENCE_API_KEY not configured. Please set your API key in the .env file.',
-          instructions: 'Get your API key from https://inference.net and add it to your .env file'
-        }, 503);
-      }
+      // Check if it's a rate limit error from the multiplexer stats
+      const stats = multiplexer.getStats();
+      const totalRateLimited = Object.values(stats).reduce((sum, stat) => sum + stat.rateLimited, 0);
       
-      if (errorMessage.includes('Request timed out after multiple attempts')) {
+      if (totalRateLimited > 0) {
         return c.json({ 
-          error: 'Service Timeout',
-          message: 'The AI service is currently overloaded and taking too long to respond.',
-          instructions: 'Please try again in a few minutes. If the problem persists, the service may be experiencing high traffic.'
-        }, 504);
-      }
-      
-      if (errorMessage.includes('524') || errorMessage.includes('Inference API error')) {
-        return c.json({ 
-          error: 'AI Service Unavailable',
-          message: 'The AI service is temporarily experiencing issues.',
-          instructions: 'This is usually temporary. Please wait a few minutes and try again.'
-        }, 502);
+          error: 'Rate Limit Exceeded',
+          message: 'Both AI providers are currently rate limited. Please try again in a few minutes.'
+        }, 429);
       }
       
       return c.json({ 
@@ -248,62 +257,68 @@ const routes = app
       }, 500);
     }
   })
+  .get('/api/base64', async (c) => {
+    const url = c.req.query('url');
+    if (!url) {
+      return c.json({ error: 'Missing url param' }, 400);
+    }
 
-// Server-side image proxy → base64 (avoids browser CORS)
-app.get('/api/base64', async (c) => {
-  const url = c.req.query('url');
-  if (!url) return c.json({ error: 'Missing url param' }, 400);
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        return c.json({ error: 'Failed to fetch image' }, 502);
+      }
 
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) return c.json({ error: 'Failed to fetch image' }, 502);
+      const contentType = resp.headers.get('content-type') || 'image/jpeg';
+      const arrayBuffer = await resp.arrayBuffer();
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      const dataUrl = `data:${contentType};base64,${base64}`;
+      
+      return c.json({ data: dataUrl });
+    } catch (err) {
+      console.error('Error fetching image:', err);
+      return c.json({ error: 'Error fetching image' }, 500);
+    }
+  })
+  .get('/api/stats', async (c) => {
+    const stats = multiplexer.getStats();
+    return c.json(stats);
+  });
 
-    const contentType = resp.headers.get('content-type') || 'image/jpeg';
-    const arrayBuffer = await resp.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
-    const dataUrl = `data:${contentType};base64,${base64}`;
-    return c.json({ data: dataUrl });
-  } catch (err) {
-    return c.json({ error: 'Error fetching image' }, 500);
-  }
-});
+// ==========================================
+// Static File Serving
+// ==========================================
 
-// Only serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static assets from the React build (JS, CSS, etc.)
+if (config.server.isProduction) {
   app.use('/assets/*', serveStatic({ root: './dist' }));
-  
-  // Serve public assets
   app.use('/*', serveStatic({ root: './public' }));
-  
-  // Serve the React app for all non-API routes (SPA fallback)
   app.get('*', serveStatic({ 
     root: './dist',
     rewriteRequestPath: (path) => {
-      // Don't rewrite API routes
       if (path.startsWith('/api/')) return path;
-      // For all other routes, serve index.html (SPA routing)
       return '/index.html';
     }
   }));
 } else {
-  // In development, serve public assets and let Vite handle the rest
   app.use('/*', serveStatic({ root: './public' }));
-  
-  // Simple 404 handler for development (no redirect loops)
   app.notFound((c) => {
     return c.json({ error: 'Route not found', path: c.req.path }, 404);
   });
 }
 
 export { routes as app };
-
-// Convenience bootstrap if run directly with tsx/bun/node
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
-  const HOST = '0.0.0.0'; // Always bind to all interfaces for Docker
-  serve({ fetch: app.fetch, port: PORT, hostname: HOST });
-  console.log(`🚀 Hono server running on http://${HOST}:${PORT}`);
-}
-
 export type AppType = typeof routes;
+
+// ==========================================
+// Server Bootstrap
+// ==========================================
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  serve({ 
+    fetch: app.fetch, 
+    port: config.server.port, 
+    hostname: config.server.host 
+  });
+  console.log(`🚀 Server running on http://${config.server.host}:${config.server.port}`);
+  console.log('📊 Provider stats at: /api/stats');
+}
