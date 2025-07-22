@@ -33,6 +33,10 @@ const Index = () => {
 
   const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4 MB limit enforced by providers
 
+  // Retry configuration for API calls
+  const RETRY_LIMIT = 2; // additional attempts after the first failure
+  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
   // Helper to estimate raw byte size from a data-URL
   const isImageTooLarge = (dataUrl: string): boolean => {
     const base64 = dataUrl.split(',')[1] || '';
@@ -41,37 +45,44 @@ const Index = () => {
     return sizeInBytes > MAX_IMAGE_BYTES;
   };
 
-  const fetchMatches = async (imageFile: string): Promise<AnalysisResult> => {
-    // Convert image to base64
-    const base64Data = imageFile.split(',')[1]; // Remove data:image/jpeg;base64, prefix
-    
-    const res = await client.api.matches.$post({
-      json: { imageBase64: base64Data }
-    });
-    
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => 'Unknown error occurred');
-      throw new Error(errorText);
+  const fetchMatches = async (imageFile: string, attempt = 0): Promise<AnalysisResult> => {
+    try {
+      // Convert image to base64 (strip data URL prefix)
+      const base64Data = imageFile.split(',')[1];
+
+      const res = await client.api.matches.$post({
+        json: { imageBase64: base64Data },
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => 'Unknown error');
+        throw new Error(errorText);
+      }
+
+      const data = await res.json();
+
+      // Normalise to Match[]
+      const mappedMatches = (data.matches || []).map((m: unknown) => {
+        const raw = m as { name: string; percentage: number; image: string; description: string; category?: string };
+        return {
+          name: raw.name,
+          percentage: raw.percentage,
+          image: raw.image,
+          description: raw.description,
+          confidence: raw.percentage >= 90 ? 'Very High' : raw.percentage >= 80 ? 'High' : 'Medium',
+          category: raw.category ?? '',
+        } as Match;
+      }) as Match[];
+
+      return { matches: mappedMatches };
+    } catch (err) {
+      if (attempt < RETRY_LIMIT) {
+        // simple exponential back-off: 1s, 2s, ...
+        await delay(1000 * (attempt + 1));
+        return fetchMatches(imageFile, attempt + 1);
+      }
+      throw err;
     }
-    
-    const data = await res.json();
-
-    // Map server response to Match[] including placeholder fields
-    const mappedMatches = (data.matches || []).map((m: unknown) => {
-      const raw = m as { name: string; percentage: number; image: string; description: string; category?: string };
-      return {
-        name: raw.name,
-        percentage: raw.percentage,
-        image: raw.image,
-        description: raw.description,
-        confidence: raw.percentage >= 90 ? 'Very High' : raw.percentage >= 80 ? 'High' : 'Medium',
-        category: raw.category ?? ''
-      } as Match;
-    }) as Match[];
-
-    return {
-      matches: mappedMatches
-    };
   };
 
   // Simulate progress during loading
