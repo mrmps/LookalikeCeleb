@@ -19,8 +19,8 @@ import { metrics, registerMetrics } from './metrics';
 // Zod schema for celebrity matches
 const CelebrityMatchSchema = z.object({
   name: z.string().describe('Full name of the celebrity'),
-  percentage: z.number().min(70).max(99).describe('Match confidence percentage'),
-  description: z.string().max(500).describe('Brief notable fact about the celebrity'),
+  percentage: z.number().describe('Match confidence percentage'),
+  description: z.string().describe('Brief notable fact about the celebrity'),
 });
 
 const CelebrityMatchesSchema = z.object({
@@ -68,7 +68,7 @@ const initializeProviders = () => {
     throw new Error('OPENAI_API_KEY not configured. Please set your OpenAI API key.');
   }
   const openai = new OpenAI({ apiKey: openaiKey });
-  multiplexer.addFallbackModel(openai, 5, 'o3-mini'); // Using o3-mini as o3 might not be directly available
+  multiplexer.addFallbackModel(openai, 5, 'gpt-4.1-mini'); // Using o3-mini as o3 might not be directly available
 
   console.log('✅ Multiplexer initialized with Inference.net Gemma 27B (primary) and OpenAI o3 (fallback)');
 };
